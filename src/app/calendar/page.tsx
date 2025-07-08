@@ -3,25 +3,26 @@
 import React, { useState, useMemo } from "react";
 import {
   format,
-  isSameDay,
-  eachDayOfInterval,
-  startOfDay,
-  endOfDay,
-  areIntervalsOverlapping,
-  startOfWeek,
-  endOfWeek,
   startOfMonth,
   endOfMonth,
-  startOfQuarter,
-  endOfQuarter,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameMonth,
+  isToday,
+  addMonths,
+  subMonths,
+  isSameDay,
+  areIntervalsOverlapping,
+  startOfDay,
+  endOfDay,
 } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAppContext } from "@/contexts/app-context";
 import {
   Dialog,
@@ -45,17 +46,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import type { Appointment, AppointmentCategory, AppointmentStatus, Task } from "@/lib/types";
-import { PlusCircle, Edit, Trash2, Clock, User, Tag, Calendar as CalendarIcon, Kanban, Flag } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Clock, User, Tag, Calendar as CalendarIcon, Kanban, Flag, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
-const appointmentCategories: Record<AppointmentCategory, { label: string; colorClass: string }> = {
-  meeting: { label: 'Meeting', colorClass: 'border-chart-1' },
-  deadline: { label: 'Deadline', colorClass: 'border-chart-5' },
-  work: { label: 'Work', colorClass: 'border-chart-4' },
-  personal: { label: 'Personal', colorClass: 'border-chart-3' },
+const appointmentCategories: Record<AppointmentCategory, { label: string; colorClass: string, bgClass: string }> = {
+  meeting: { label: 'Meeting', colorClass: 'border-chart-1', bgClass: 'bg-chart-1/20' },
+  deadline: { label: 'Deadline', colorClass: 'border-chart-5', bgClass: 'bg-chart-5/20' },
+  work: { label: 'Work', colorClass: 'border-chart-4', bgClass: 'bg-chart-4/20' },
+  personal: { label: 'Personal', colorClass: 'border-chart-3', bgClass: 'bg-chart-3/20' },
 };
 
 const appointmentStatuses: Record<AppointmentStatus, { label: string; colorClass: string }> = {
@@ -122,8 +124,8 @@ function AppointmentForm({
     
     const appointmentData = { 
         ...finalValues, 
-        startDate: values.dateRange!.from,
-        endDate: values.dateRange!.to || values.dateRange!.from,
+        startDate: values.dateRange!.from!,
+        endDate: values.dateRange!.to || values.dateRange!.from!,
     };
     delete (appointmentData as any).dateRange;
 
@@ -183,7 +185,7 @@ function AppointmentForm({
                     </FormControl>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
+                    <CalendarComponent
                       initialFocus
                       mode="range"
                       defaultMonth={field.value?.from}
@@ -246,17 +248,42 @@ function AppointmentForm({
   );
 }
 
+function EventPill({ event, onEdit }: { event: CalendarEvent, onEdit: (app: Appointment) => void; }) {
+    if (event.type === 'appointment') {
+        const app = event.original as Appointment;
+        const categoryInfo = appointmentCategories[app.category];
+        return (
+            <DialogTrigger asChild>
+                <button 
+                  onClick={() => onEdit(app)}
+                  className={cn(
+                      "w-full text-left p-1.5 rounded-md text-xs mb-1 truncate",
+                      categoryInfo.bgClass,
+                      categoryInfo.colorClass.replace('border-', 'text-')
+                  )}
+                >
+                    <span className="font-semibold">{app.title}</span>
+                </button>
+            </DialogTrigger>
+        )
+    }
+    // Task
+    const task = event.original as Task;
+    return (
+        <div className="w-full text-left p-1.5 rounded-md text-xs mb-1 truncate bg-primary/20 text-primary-foreground">
+            <span className="font-semibold">{task.title}</span>
+        </div>
+    )
+}
 
 export default function CalendarPage() {
-  const { appointments, deleteAppointment, employees, tasks } = useAppContext();
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: startOfWeek(new Date()), to: endOfWeek(new Date()) });
-  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+  const { appointments, deleteAppointment, employees, tasks, addAppointment, updateAppointment } = useAppContext();
+  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | undefined>(undefined);
+  const [initialDateForForm, setInitialDateForForm] = useState<DateRange | undefined>(undefined);
   const [filters, setFilters] = useState({ category: 'all', status: 'all' });
   const { toast } = useToast();
-
-  const employeeMap = useMemo(() => new Map(employees.map(e => [e.id, e.name])), [employees]);
-  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
   const allEvents: CalendarEvent[] = useMemo(() => {
     const fromAppointments: CalendarEvent[] = appointments.map(app => ({
@@ -286,262 +313,155 @@ export default function CalendarPage() {
     return [...fromAppointments, ...fromTasks];
   }, [appointments, tasks]);
   
-  const eventsForSelectedRange = useMemo(() => {
-    if (!dateRange?.from) return [];
+  const eventsByDate = useMemo(() => {
+    const grouped = new Map<string, CalendarEvent[]>();
+    allEvents
+        .filter(event => {
+            if (event.type === 'appointment') {
+                const app = event.original as Appointment;
+                const categoryMatch = filters.category === 'all' || app.category === filters.category;
+                const statusMatch = filters.status === 'all' || app.status === filters.status;
+                return categoryMatch && statusMatch;
+            }
+            return true;
+        })
+        .forEach(event => {
+            const daysInEvent = eachDayOfInterval({ start: startOfDay(event.startDate), end: endOfDay(event.endDate) });
+            daysInEvent.forEach(day => {
+                const key = format(day, "yyyy-MM-dd");
+                const existing = grouped.get(key) || [];
+                // Avoid duplicates
+                if (!existing.some(e => e.id === event.id)) {
+                    grouped.set(key, [...existing, event]);
+                }
+            });
+    });
+    return grouped;
+  }, [allEvents, filters]);
 
-    const selectedInterval = {
-      start: startOfDay(dateRange.from),
-      end: endOfDay(dateRange.to || dateRange.from),
-    };
 
-    return allEvents
-      .filter((event) => {
-        const eventInterval = {
-            start: startOfDay(event.startDate),
-            end: endOfDay(event.endDate),
-        };
-        return areIntervalsOverlapping(selectedInterval, eventInterval);
-      })
-      .filter(event => {
-        if (event.type === 'appointment') {
-            const app = event.original as Appointment;
-            const categoryMatch = filters.category === 'all' || app.category === filters.category;
-            const statusMatch = filters.status === 'all' || app.status === filters.status;
-            return categoryMatch && statusMatch;
-        }
-        return true;
-      })
-      .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
-  }, [allEvents, dateRange, filters]);
-  
-  const handleDelete = (id: string) => {
-    if(window.confirm("Are you sure you want to delete this appointment?")) {
-        deleteAppointment(id);
-        toast({ title: "Success", description: "Appointment deleted." });
-    }
-  }
+  const daysForGrid = useMemo(() => {
+    const start = startOfWeek(startOfMonth(currentMonth));
+    const end = endOfWeek(endOfMonth(currentMonth));
+    return eachDayOfInterval({ start, end });
+  }, [currentMonth]);
+
 
   const handleFilterChange = (filterName: string, value: string) => {
       setFilters(prev => ({...prev, [filterName]: value}));
   }
   
-  const bookedDays = useMemo(() => {
-    const dates: Date[] = [];
-    allEvents.forEach(event => {
-      dates.push(...eachDayOfInterval({ start: event.startDate, end: event.endDate }));
-    });
-    return dates;
-  }, [allEvents]);
-
-  const formatDateRange = (start: Date, end: Date) => {
-      if (isSameDay(start, end)) {
-          return format(start, "MMM d, yyyy");
-      }
-      return `${format(start, "MMM d")} - ${format(end, "MMM d, yyyy")}`;
+  const handleOpenForm = (appointment?: Appointment, date?: Date) => {
+    if (appointment) {
+        setEditingAppointment(appointment);
+    } else {
+        setEditingAppointment(undefined);
+    }
+    if (date) {
+        setInitialDateForForm({ from: date, to: date });
+    } else {
+        setInitialDateForForm(undefined);
+    }
+    setIsFormOpen(true);
   }
 
-  const formatHeaderDateRange = (range: DateRange | undefined) => {
-    if (!range?.from) {
-      return "Select a date range";
-    }
-    const start = range.from;
-    const end = range.to || range.from;
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setEditingAppointment(undefined);
+    setInitialDateForForm(undefined);
+  }
 
-    if (isSameDay(start, end)) {
-      return format(start, "MMMM d, yyyy");
-    }
-    if (start.getMonth() === end.getMonth()) {
-        return `${format(start, "MMM d")} - ${format(end, "d, yyyy")}`;
-    }
-    return `${format(start, "MMM d, yyyy")} - ${format(end, "MMM d, yyyy")}`;
-  };
+  const weekdays = useMemo(() => {
+      const firstDay = startOfWeek(new Date());
+      return Array.from({length: 7}, (_, i) => format(new Date(firstDay.setDate(firstDay.getDate() + (i === 0 ? 0 : 1))), 'E'))
+  }, []);
 
   return (
-    <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
-      <Card className="lg:col-span-2">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-            <div className="flex-1">
-              <CardTitle>{formatHeaderDateRange(dateRange)}</CardTitle>
-              <CardDescription>
-                {eventsForSelectedRange.length} event(s) found in this period
-              </CardDescription>
+    <Dialog open={isFormOpen} onOpenChange={(open) => !open && handleCloseForm()}>
+        <Card className="h-[calc(100vh-8rem)] flex flex-col">
+            <CardHeader className="flex-none">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><ChevronLeft className="h-4 w-4" /></Button>
+                    <CardTitle className="text-xl sm:text-2xl w-40 text-center">{format(currentMonth, "MMMM yyyy")}</CardTitle>
+                    <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><ChevronRight className="h-4 w-4" /></Button>
+                    <Button variant="outline" onClick={() => setCurrentMonth(startOfMonth(new Date()))}>Today</Button>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Select value={filters.category} onValueChange={(value) => handleFilterChange('category', value)}>
+                        <SelectTrigger className="w-full sm:w-[150px]">
+                            <SelectValue placeholder="Filter by category..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Categories</SelectItem>
+                            {Object.entries(appointmentCategories).map(([key, {label}]) => (
+                                <SelectItem key={key} value={key}>{label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+                        <SelectTrigger className="w-full sm:w-[150px]">
+                            <SelectValue placeholder="Filter by status..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Statuses</SelectItem>
+                            {Object.entries(appointmentStatuses).map(([key, {label}]) => (
+                                <SelectItem key={key} value={key}>{label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Button onClick={() => handleOpenForm(undefined, new Date())}><PlusCircle className="mr-0 sm:mr-2 h-4 w-4"/><span className="hidden sm:inline">Add Event</span></Button>
+                </div>
             </div>
-            <div className="flex items-center gap-2">
-                 <Select value={filters.category} onValueChange={(value) => handleFilterChange('category', value)}>
-                    <SelectTrigger className="w-full sm:w-[150px]">
-                        <SelectValue placeholder="Filter by category..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Categories</SelectItem>
-                        {Object.entries(appointmentCategories).map(([key, {label}]) => (
-                            <SelectItem key={key} value={key}>{label}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                 <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
-                    <SelectTrigger className="w-full sm:w-[150px]">
-                        <SelectValue placeholder="Filter by status..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Statuses</SelectItem>
-                        {Object.entries(appointmentStatuses).map(([key, {label}]) => (
-                            <SelectItem key={key} value={key}>{label}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <Dialog open={isAddFormOpen} onOpenChange={setIsAddFormOpen}>
-                    <DialogTrigger asChild>
-                        <Button size="icon" variant="outline"><PlusCircle className="h-4 w-4"/></Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Add New Event</DialogTitle>
-                        </DialogHeader>
-                        <AppointmentForm onFinished={() => setIsAddFormOpen(false)} initialDateRange={dateRange} />
-                    </DialogContent>
-                </Dialog>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pr-2">
-          <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-4">
-            {eventsForSelectedRange.length > 0 ? (
-              eventsForSelectedRange.map((event) => {
-                const assignedUserName = event.assignedTo ? employeeMap.get(event.assignedTo) : undefined;
-                
-                if (event.type === 'appointment') {
-                    const app = event.original as Appointment;
-                    const categoryInfo = appointmentCategories[app.category];
-                    const statusInfo = appointmentStatuses[app.status];
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col p-0 md:p-2 lg:p-4">
+                <div className="grid grid-cols-7 border-b">
+                    {weekdays.map(day => (
+                        <div key={day} className="text-center font-semibold text-muted-foreground p-2 text-sm">{day}</div>
+                    ))}
+                </div>
+                <div className="grid grid-cols-7 grid-rows-5 flex-1 overflow-auto">
+                    {daysForGrid.map(day => {
+                        const dayKey = format(day, "yyyy-MM-dd");
+                        const eventsForDay = eventsByDate.get(dayKey)?.sort((a,b) => a.startDate.getTime() - b.startDate.getTime()) || [];
 
-                    return (
-                        <div key={app.id} className={cn("relative flex items-start gap-4 rounded-lg border p-4 border-l-4 transition-all hover:shadow-md", categoryInfo.colorClass)}>
-                             <CalendarIcon className="h-5 w-5 mt-1 text-muted-foreground" />
-                            <div className="flex-1 space-y-2">
-                                <div className="flex justify-between items-start">
-                                    <p className="font-semibold leading-snug">{app.title}</p>
-                                    <div className="flex gap-1 absolute top-2 right-2">
-                                        <Dialog open={editingAppointment?.id === app.id} onOpenChange={(isOpen) => !isOpen && setEditingAppointment(undefined)}>
-                                            <DialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingAppointment(app)}><Edit className="h-4 w-4" /></Button>
-                                            </DialogTrigger>
-                                            <DialogContent>
-                                            <DialogHeader>
-                                                <DialogTitle>Edit Event</DialogTitle>
-                                            </DialogHeader>
-                                            <AppointmentForm appointment={app} onFinished={() => setEditingAppointment(undefined)} />
-                                            </DialogContent>
-                                        </Dialog>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(app.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                    </div>
-                                </div>
-                                 <p className="text-sm text-muted-foreground flex items-center">
-                                    <Clock className="h-3.5 w-3.5 mr-1.5" />
-                                    {formatDateRange(app.startDate, app.endDate)}
-                                </p>
-                                
-                                {app.description && <p className="text-sm text-muted-foreground">{app.description}</p>}
-                                
-                                <div className="flex items-center justify-between pt-2">
-                                    <div className="flex items-center gap-2">
-                                        {assignedUserName ? (
-                                            <div className="flex items-center gap-2">
-                                                <Avatar className="h-6 w-6"><AvatarFallback>{getInitials(assignedUserName)}</AvatarFallback></Avatar>
-                                                <span className="text-xs text-muted-foreground">{assignedUserName}</span>
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center gap-2">
-                                                <Avatar className="h-6 w-6"><AvatarFallback><User className="h-4 w-4 text-muted-foreground" /></AvatarFallback></Avatar>
-                                                <span className="text-xs text-muted-foreground">Unassigned</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <Badge variant="secondary" className="flex items-center gap-2">
-                                            <Tag className="h-3 w-3" />
-                                            <span>{categoryInfo.label}</span>
-                                        </Badge>
-                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <span className={cn("h-2.5 w-2.5 rounded-full", statusInfo.colorClass)} />
-                                            <span>{statusInfo.label}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )
-                } else { // event.type === 'task'
-                    const task = event.original as Task;
-                    return (
-                        <div key={task.id} className="relative flex items-start gap-4 rounded-lg border p-4 border-l-4 border-primary transition-all hover:shadow-md">
-                            <Kanban className="h-5 w-5 mt-1 text-muted-foreground" />
-                            <div className="flex-1 space-y-2">
-                                <p className="font-semibold leading-snug">{task.title}</p>
-                                <p className="text-sm text-muted-foreground flex items-center">
-                                    <Clock className="h-3.5 w-3.5 mr-1.5" />
-                                    {formatDateRange(event.startDate, event.endDate)}
-                                </p>
-                                {task.description && <p className="text-sm text-muted-foreground">{task.description}</p>}
-                                <div className="flex items-center justify-between pt-2">
-                                    <div className="flex items-center gap-2">
-                                         {assignedUserName ? (
-                                            <div className="flex items-center gap-2">
-                                                <Avatar className="h-6 w-6"><AvatarFallback>{getInitials(assignedUserName)}</AvatarFallback></Avatar>
-                                                <span className="text-xs text-muted-foreground">{assignedUserName}</span>
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center gap-2">
-                                                <Avatar className="h-6 w-6"><AvatarFallback><User className="h-4 w-4 text-muted-foreground" /></AvatarFallback></Avatar>
-                                                <span className="text-xs text-muted-foreground">Unassigned</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    {task.priority && (
-                                        <Badge variant="outline" className="flex items-center gap-1">
-                                            <Flag className="h-3 w-3"/>
-                                            {task.priority}
-                                        </Badge>
+                        return (
+                            <div key={dayKey} className={cn("relative border-b border-r p-2 flex flex-col", { 'bg-muted/30': !isSameMonth(day, currentMonth) })}>
+                                <DialogTrigger asChild>
+                                    <button
+                                        onClick={() => handleOpenForm(undefined, day)}
+                                        className={cn("h-8 w-8 flex items-center justify-center rounded-full text-sm self-end mb-1", 
+                                        isToday(day) ? "bg-primary text-primary-foreground font-bold" : "hover:bg-accent"
+                                    )}>
+                                        {format(day, 'd')}
+                                    </button>
+                                </DialogTrigger>
+                                <div className="flex-1 overflow-y-auto -mx-2 px-2">
+                                    {eventsForDay.slice(0, 3).map(event => (
+                                        <EventPill key={event.id} event={event} onEdit={(app) => handleOpenForm(app)} />
+                                    ))}
+                                    {eventsForDay.length > 3 && (
+                                        <p className="text-xs text-muted-foreground text-center mt-1">+ {eventsForDay.length - 3} more</p>
                                     )}
                                 </div>
                             </div>
-                        </div>
-                    )
-                }
-              })
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-12">
-                No events scheduled for this period, or none match your filters.
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-      
-      <div className="lg:col-span-1">
-      <Card className="h-fit">
-        <CardContent className="p-0">
-            <Calendar
-                mode="range"
-                selected={dateRange}
-                onSelect={setDateRange}
-                className="w-full"
-                modifiers={{ booked: bookedDays }}
-                modifiersStyles={{ booked: { border: '2px solid hsl(var(--primary))', borderRadius: 'var(--radius)' } }}
-            />
-        </CardContent>
-        <CardFooter className="flex-col items-start gap-2 p-4 border-t">
-            <p className="text-sm font-medium text-muted-foreground">Quick Select</p>
-            <div className="grid grid-cols-2 gap-2 w-full">
-                <Button variant="outline" size="sm" className="flex-1" onClick={() => setDateRange({ from: new Date(), to: new Date() })}>Today</Button>
-                <Button variant="outline" size="sm" className="flex-1" onClick={() => setDateRange({ from: startOfWeek(new Date()), to: endOfWeek(new Date()) })}>This Week</Button>
-                <Button variant="outline" size="sm" className="flex-1" onClick={() => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })}>This Month</Button>
-                <Button variant="outline" size="sm" className="flex-1" onClick={() => setDateRange({ from: startOfQuarter(new Date()), to: endOfQuarter(new Date()) })}>This Quarter</Button>
-            </div>
-        </CardFooter>
-      </Card>
-      </div>
+                        )
+                    })}
+                </div>
+            </CardContent>
 
-    </div>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{editingAppointment ? 'Edit Event' : 'Add New Event'}</DialogTitle>
+                </DialogHeader>
+                <AppointmentForm 
+                    appointment={editingAppointment} 
+                    onFinished={handleCloseForm} 
+                    initialDateRange={initialDateForForm} 
+                />
+            </DialogContent>
+
+        </Card>
+    </Dialog>
   );
 }
