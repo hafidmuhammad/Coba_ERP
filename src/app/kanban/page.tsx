@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PlusCircle, MoreHorizontal, Edit, Trash2, CalendarIcon, User, Flag, Search, AreaChart } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -289,7 +289,7 @@ export default function KanbanPage() {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const { toast } = useToast();
   
-  const [filters, setFilters] = useState({ searchTerm: '', priority: '', assignedTo: '' });
+  const [filters, setFilters] = useState({ searchTerm: '', priority: 'all', assignedTo: 'all' });
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -446,7 +446,7 @@ export default function KanbanPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Search tasks..." className="pl-9" value={filters.searchTerm} onChange={e => handleFilterChange('searchTerm', e.target.value)} />
                 </div>
-                <Select value={filters.priority} onValueChange={value => handleFilterChange('priority', value === 'all' ? '' : value)}>
+                <Select value={filters.priority} onValueChange={value => handleFilterChange('priority', value)}>
                     <SelectTrigger className="w-full md:w-[180px]">
                         <span className="flex items-center gap-2">
                            <Flag className="h-4 w-4 text-muted-foreground" />
@@ -458,7 +458,7 @@ export default function KanbanPage() {
                         {priorities.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
                     </SelectContent>
                 </Select>
-                <Select value={filters.assignedTo} onValueChange={value => handleFilterChange('assignedTo', value === 'all' ? '' : value)}>
+                <Select value={filters.assignedTo} onValueChange={value => handleFilterChange('assignedTo', value)}>
                     <SelectTrigger className="w-full md:w-[180px]">
                         <span className="flex items-center gap-2">
                             <User className="h-4 w-4 text-muted-foreground" />
@@ -470,7 +470,7 @@ export default function KanbanPage() {
                         {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
                     </SelectContent>
                 </Select>
-                 <Button variant="ghost" onClick={() => setFilters({ searchTerm: '', priority: '', assignedTo: '' })}>Clear</Button>
+                 <Button variant="ghost" onClick={() => setFilters({ searchTerm: '', priority: 'all', assignedTo: 'all' })}>Clear</Button>
             </div>
         </Card>
 
@@ -489,7 +489,11 @@ export default function KanbanPage() {
                             onEdit={setEditingTask} 
                             onDelete={handleDelete}
                             employeeMap={employeeMap}
-                            filters={filters}
+                            filters={{
+                                ...filters,
+                                priority: filters.priority === 'all' ? '' : filters.priority,
+                                assignedTo: filters.assignedTo === 'all' ? '' : filters.assignedTo
+                            }}
                         />
                     ))}
                 </div>
