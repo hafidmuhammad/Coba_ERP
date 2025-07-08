@@ -1,7 +1,13 @@
-
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
+import { DndContext, DragEndEvent, DragStartEvent, PointerSensor, useSensor, useSensors, closestCorners, DragOverlay } from "@dnd-kit/core";
+import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { format, isSameDay } from "date-fns";
 import { useAppContext } from '@/contexts/app-context';
 import type { Task, Employee } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -10,37 +16,17 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PlusCircle, MoreHorizontal, Edit, Trash2, CalendarIcon, User, Flag, Search, AreaChart } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { DndContext, DragEndEvent, DragStartEvent, PointerSensor, useSensor, useSensors, closestCorners, DragOverlay } from "@dnd-kit/core";
-import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { KanbanAnalytics } from './analytics';
 
@@ -78,10 +64,20 @@ const getPriorityClassName = (priority: Task['priority']) => {
 const taskSchema = z.object({
   title: z.string().min(2, "Title must be at least 2 characters."),
   description: z.string().optional(),
-  dueDate: z.date().optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
   assignedTo: z.string().optional(),
+}).refine(data => {
+    if (data.startDate && data.endDate) {
+        return data.endDate >= data.startDate;
+    }
+    return true;
+}, {
+    message: "End date must be on or after start date.",
+    path: ["endDate"],
 });
+
 
 function TaskForm({ task, onFinished }: { task?: Task, onFinished: () => void }) {
   const { addTask, updateTask, employees } = useAppContext();
@@ -92,7 +88,8 @@ function TaskForm({ task, onFinished }: { task?: Task, onFinished: () => void })
     defaultValues: {
       title: task?.title || "",
       description: task?.description || "",
-      dueDate: task?.dueDate ? new Date(task.dueDate) : undefined,
+      startDate: task?.startDate ? new Date(task.startDate) : undefined,
+      endDate: task?.endDate ? new Date(task.endDate) : undefined,
       priority: task?.priority || 'medium',
       assignedTo: task?.assignedTo || "unassigned",
     },
@@ -125,8 +122,8 @@ function TaskForm({ task, onFinished }: { task?: Task, onFinished: () => void })
           <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} placeholder="Add more details..."/></FormControl><FormMessage /></FormItem>
         )} />
         <div className="grid grid-cols-2 gap-4">
-            <FormField control={form.control} name="dueDate" render={({ field }) => (
-              <FormItem className="flex flex-col"><FormLabel>Due Date</FormLabel>
+            <FormField control={form.control} name="startDate" render={({ field }) => (
+              <FormItem className="flex flex-col"><FormLabel>Start Date</FormLabel>
                 <Popover><PopoverTrigger asChild>
                     <Button variant={"outline"} className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -135,6 +132,18 @@ function TaskForm({ task, onFinished }: { task?: Task, onFinished: () => void })
                 </PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover>
               </FormItem>
             )} />
+            <FormField control={form.control} name="endDate" render={({ field }) => (
+              <FormItem className="flex flex-col"><FormLabel>End Date</FormLabel>
+                <Popover><PopoverTrigger asChild>
+                    <Button variant={"outline"} className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                </PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover>
+              </FormItem>
+            )} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
             <FormField control={form.control} name="priority" render={({ field }) => (
                 <FormItem><FormLabel>Priority</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -145,18 +154,19 @@ function TaskForm({ task, onFinished }: { task?: Task, onFinished: () => void })
                     </Select>
                 </FormItem>
             )} />
+            <FormField control={form.control} name="assignedTo" render={({ field }) => (
+                <FormItem><FormLabel>Assigned To</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} defaultValue="unassigned">
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select a team member" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                            <SelectItem value="unassigned">Unassigned</SelectItem>
+                            {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </FormItem>
+            )} />
         </div>
-        <FormField control={form.control} name="assignedTo" render={({ field }) => (
-            <FormItem><FormLabel>Assigned To</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select a team member" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                        <SelectItem value="unassigned">Unassigned</SelectItem>
-                        {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-            </FormItem>
-        )} />
+        
         <DialogFooter>
           <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
           <Button type="submit">{task ? 'Save Task' : 'Add Task'}</Button>
@@ -170,6 +180,22 @@ function TaskCard({ task, onEdit, onDelete, isOverlay, employeeMap }: { task: Ta
   const assignedUser = task.assignedTo ? employeeMap.get(task.assignedTo) : undefined;
   
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+
+  const formatDateRange = (start?: Date, end?: Date) => {
+    if (!start && !end) return null;
+    const s = start ? new Date(start) : null;
+    const e = end ? new Date(end) : null;
+
+    if (s && e) {
+        if (isSameDay(s, e)) return format(e, "MMM d");
+        return `${format(s, "MMM d")} - ${format(e, "MMM d")}`;
+    }
+    if (e) return `Due: ${format(e, "MMM d")}`;
+    if (s) return `Starts: ${format(s, "MMM d")}`;
+    return null;
+  }
+
+  const dateDisplay = formatDateRange(task.startDate, task.endDate);
 
   return (
     <Card className={cn("mb-4 bg-card/80 backdrop-blur-sm hover:shadow-md transition-shadow", isOverlay && "shadow-xl ring-2 ring-primary")}>
@@ -187,7 +213,7 @@ function TaskCard({ task, onEdit, onDelete, isOverlay, employeeMap }: { task: Ta
         <div className="flex items-center justify-between mt-3 gap-2">
             <div className="flex items-center gap-2">
                 {task.priority && <Badge className={cn("text-xs", getPriorityClassName(task.priority))}>{task.priority}</Badge>}
-                {task.dueDate && <div className="flex items-center text-xs text-muted-foreground"><CalendarIcon className="h-3 w-3 mr-1" /><span>{format(new Date(task.dueDate), "MMM d")}</span></div>}
+                {dateDisplay && <div className="flex items-center text-xs text-muted-foreground"><CalendarIcon className="h-3 w-3 mr-1" /><span>{dateDisplay}</span></div>}
             </div>
             {assignedUser && (
                 <TooltipProvider>
@@ -346,8 +372,6 @@ export default function KanbanPage() {
   const handleFilterChange = (filterName: string, value: string) => {
     setFilters(prev => ({ ...prev, [filterName]: value }));
   };
-  
-  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
   
   if (!isMounted) {
     return (

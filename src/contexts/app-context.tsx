@@ -5,23 +5,23 @@ import { Revenue, Expense, Appointment, Product, Employee, Task } from "@/lib/ty
 
 // Mock Data
 const initialRevenue: Revenue[] = [
-  { id: "rev1", date: new Date(2023, 10, 15), amount: 1200, customer: "Client A", description: "Web Design Project" },
-  { id: "rev2", date: new Date(2023, 10, 20), amount: 750, customer: "Client B", description: "Consulting Services" },
-  { id: "rev3", date: new Date(2023, 11, 5), amount: 2500, customer: "Client C", description: "E-commerce Site" },
+  { id: "rev1", date: new Date("2023-11-15"), amount: 1200, customer: "Client A", description: "Web Design Project" },
+  { id: "rev2", date: new Date("2023-11-20"), amount: 750, customer: "Client B", description: "Consulting Services" },
+  { id: "rev3", date: new Date("2023-12-05"), amount: 2500, customer: "Client C", description: "E-commerce Site" },
 ];
 
 const initialExpenses: Expense[] = [
-  { id: "exp1", date: new Date(2023, 10, 1), amount: 50, vendor: "Software Inc.", description: "Monthly Subscription" },
-  { id: "exp2", date: new Date(2023, 10, 18), amount: 300, vendor: "Office Supplies Co.", description: "New Equipment" },
-  { id: "exp3", date: new Date(2023, 11, 8), amount: 150, vendor: "Cloud Services", description: "Hosting Bill" },
+  { id: "exp1", date: new Date("2023-11-01"), amount: 50, vendor: "Software Inc.", description: "Monthly Subscription" },
+  { id: "exp2", date: new Date("2023-11-18"), amount: 300, vendor: "Office Supplies Co.", description: "New Equipment" },
+  { id: "exp3", date: new Date("2023-12-08"), amount: 150, vendor: "Cloud Services", description: "Hosting Bill" },
 ];
 
 const initialAppointments: Appointment[] = [
-    { id: "app1", date: new Date("2024-07-20T10:00:00"), startTime: "10:00", duration: 60, title: "Project Kick-off with Client A", description: "Initial meeting to discuss project scope and deliverables.", assignedTo: 'emp2', category: 'meeting', status: 'completed' },
-    { id: "app2", date: new Date("2024-07-21T14:00:00"), startTime: "14:00", duration: 30, title: "Team Stand-up", description: "Daily sync-up for the dev team.", assignedTo: 'emp1', category: 'meeting', status: 'planned' },
-    { id: "app3", date: new Date("2024-07-22T09:00:00"), startTime: "09:00", duration: 240, title: "Work on CRM feature", description: "Focus block for CRM development.", assignedTo: 'emp1', category: 'work', status: 'ongoing' },
-    { id: "app4", date: new Date("2024-07-22T17:00:00"), startTime: "17:00", duration: 60, title: "Submit Q3 Report", description: "Finalize and submit the quarterly financial report.", assignedTo: 'emp2', category: 'deadline', status: 'planned' },
-    { id: "app5", date: new Date("2024-07-21T11:00:00"), startTime: "11:00", duration: 60, title: "Design Review", description: "Review new UI mockups.", assignedTo: 'emp1', category: 'meeting', status: 'cancelled' },
+    { id: "app1", startDate: new Date("2024-07-20"), endDate: new Date("2024-07-20"), title: "Project Kick-off with Client A", description: "Initial meeting to discuss project scope and deliverables.", assignedTo: 'emp2', category: 'meeting', status: 'completed' },
+    { id: "app2", startDate: new Date("2024-07-21"), endDate: new Date("2024-07-21"), title: "Team Stand-up", description: "Daily sync-up for the dev team.", assignedTo: 'emp1', category: 'meeting', status: 'planned' },
+    { id: "app3", startDate: new Date("2024-07-22"), endDate: new Date("2024-07-24"), title: "Focus: CRM Development", description: "Focus block for CRM development.", assignedTo: 'emp1', category: 'work', status: 'ongoing' },
+    { id: "app4", startDate: new Date("2024-07-22"), endDate: new Date("2024-07-22"), title: "Submit Q3 Report", description: "Finalize and submit the quarterly financial report.", assignedTo: 'emp2', category: 'deadline', status: 'planned' },
+    { id: "app5", startDate: new Date("2024-07-21"), endDate: new Date("2024-07-21"), title: "Design Review", description: "Review new UI mockups.", assignedTo: 'emp1', category: 'meeting', status: 'cancelled' },
 ];
 
 
@@ -37,12 +37,12 @@ const initialEmployees: Employee[] = [
 ];
 
 const initialTasks: Task[] = [
-    { id: 'task1', columnId: 'todo', title: 'Draft Q3 promotional material', description: 'Focus on new port services.', dueDate: new Date("2024-07-23"), priority: 'high', assignedTo: 'emp2' },
+    { id: 'task1', columnId: 'todo', title: 'Draft Q3 promotional material', description: 'Focus on new port services.', endDate: new Date("2024-07-23"), priority: 'high', assignedTo: 'emp2' },
     { id: 'task2', columnId: 'todo', title: 'Schedule social media posts for next week', priority: 'medium' },
-    { id: 'task3', columnId: 'inprogress', title: 'Develop new CRM integration feature', dueDate: new Date("2024-07-30"), priority: 'urgent', assignedTo: 'emp1' },
+    { id: 'task3', columnId: 'inprogress', title: 'Develop new CRM integration feature', startDate: new Date("2024-07-25"), endDate: new Date("2024-07-30"), priority: 'urgent', assignedTo: 'emp1' },
     { id: 'task4', columnId: 'inprogress', title: 'Onboard new logistics partner', priority: 'high' },
-    { id: 'task5', columnId: 'inreview', title: 'Review Q2 financial report', priority: 'medium', assignedTo: 'emp2'},
-    { id: 'task6', columnId: 'done', title: 'Finalize employee handbook update', dueDate: new Date("2024-07-15"), priority: 'low' },
+    { id: 'task5', columnId: 'inreview', title: 'Review Q2 financial report', endDate: new Date("2024-07-28"), priority: 'medium', assignedTo: 'emp2'},
+    { id: 'task6', columnId: 'done', title: 'Finalize employee handbook update', endDate: new Date("2024-07-15"), priority: 'low' },
 ];
 
 interface AppContextType {

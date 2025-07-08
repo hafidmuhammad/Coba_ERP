@@ -19,9 +19,8 @@ export type AppointmentStatus = 'planned' | 'ongoing' | 'completed' | 'cancelled
 
 export interface Appointment {
   id: string;
-  date: Date;
-  startTime: string;
-  duration: number; // in minutes
+  startDate: Date;
+  endDate: Date;
   title: string;
   description?: string;
   assignedTo?: string; // Employee ID
@@ -51,7 +50,8 @@ export interface Task {
   title: string;
   description?: string;
   columnId: 'todo' | 'inprogress' | 'inreview' | 'done';
-  dueDate?: Date;
+  startDate?: Date;
+  endDate?: Date;
   priority?: 'low' | 'medium' | 'high' | 'urgent';
   assignedTo?: string; // Employee ID
 }
