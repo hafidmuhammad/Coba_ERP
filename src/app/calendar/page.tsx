@@ -12,6 +12,8 @@ import {
   endOfWeek,
   startOfMonth,
   endOfMonth,
+  startOfQuarter,
+  endOfQuarter,
 } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -530,10 +532,11 @@ export default function CalendarPage() {
         </CardContent>
         <CardFooter className="flex-col items-start gap-2 p-4 border-t">
             <p className="text-sm font-medium text-muted-foreground">Quick Select</p>
-            <div className="flex gap-2 w-full">
+            <div className="grid grid-cols-2 gap-2 w-full">
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => setDateRange({ from: new Date(), to: new Date() })}>Today</Button>
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => setDateRange({ from: startOfWeek(new Date()), to: endOfWeek(new Date()) })}>This Week</Button>
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })}>This Month</Button>
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => setDateRange({ from: startOfQuarter(new Date()), to: endOfQuarter(new Date()) })}>This Quarter</Button>
             </div>
         </CardFooter>
       </Card>
