@@ -8,20 +8,38 @@ const initialRevenue: Revenue[] = [
   { id: "rev1", date: new Date("2023-11-15"), amount: 1200, customer: "Client A", description: "Web Design Project" },
   { id: "rev2", date: new Date("2023-11-20"), amount: 750, customer: "Client B", description: "Consulting Services" },
   { id: "rev3", date: new Date("2023-12-05"), amount: 2500, customer: "Client C", description: "E-commerce Site" },
+  { id: "rev4", date: new Date("2024-01-20"), amount: 1800, customer: "Client A", description: "SEO Optimization" },
+  { id: "rev5", date: new Date("2024-02-10"), amount: 950, customer: "Client D", description: "Logo Design" },
+  { id: "rev6", date: new Date("2024-03-25"), amount: 3200, customer: "Client B", description: "Full Branding Package" },
 ];
 
 const initialExpenses: Expense[] = [
   { id: "exp1", date: new Date("2023-11-01"), amount: 50, vendor: "Software Inc.", description: "Monthly Subscription" },
   { id: "exp2", date: new Date("2023-11-18"), amount: 300, vendor: "Office Supplies Co.", description: "New Equipment" },
   { id: "exp3", date: new Date("2023-12-08"), amount: 150, vendor: "Cloud Services", description: "Hosting Bill" },
+  { id: "exp4", date: new Date("2024-01-10"), amount: 1200, vendor: "Marketing Agency", description: "Ad Campaign" },
+  { id: "exp5", date: new Date("2024-02-15"), amount: 75, vendor: "Software Inc.", description: "Plugin License" },
+  { id: "exp6", date: new Date("2024-03-05"), amount: 500, vendor: "Legal Services", description: "Contract Review" },
 ];
 
 const initialAppointments: Appointment[] = [
-    { id: "app1", startDate: new Date("2024-07-20"), endDate: new Date("2024-07-20"), title: "Project Kick-off with Client A", description: "Initial meeting to discuss project scope and deliverables.", assignedTo: 'emp2', category: 'meeting', status: 'completed' },
-    { id: "app2", startDate: new Date("2024-07-21"), endDate: new Date("2024-07-21"), title: "Team Stand-up", description: "Daily sync-up for the dev team.", assignedTo: 'emp1', category: 'meeting', status: 'planned' },
-    { id: "app3", startDate: new Date("2024-07-22"), endDate: new Date("2024-07-24"), title: "Focus: CRM Development", description: "Focus block for CRM development.", assignedTo: 'emp1', category: 'work', status: 'ongoing' },
-    { id: "app4", startDate: new Date("2024-07-22"), endDate: new Date("2024-07-22"), title: "Submit Q3 Report", description: "Finalize and submit the quarterly financial report.", assignedTo: 'emp2', category: 'deadline', status: 'planned' },
-    { id: "app5", startDate: new Date("2024-07-21"), endDate: new Date("2024-07-21"), title: "Design Review", description: "Review new UI mockups.", assignedTo: 'emp1', category: 'meeting', status: 'cancelled' },
+    // Q1
+    { id: "app1", startDate: new Date("2024-01-15"), endDate: new Date("2024-01-15"), title: "Q1 2024 Kick-off Meeting", assignedTo: 'emp2', category: 'meeting', status: 'completed' },
+    { id: "app2", startDate: new Date("2024-02-10"), endDate: new Date("2024-02-12"), title: "Leadership Training", category: 'work', status: 'completed' },
+    { id: "app3", startDate: new Date("2024-03-28"), endDate: new Date("2024-03-28"), title: "Q1 Performance Review Deadline", assignedTo: 'emp2', category: 'deadline', status: 'planned' },
+    // Q2
+    { id: "app4", startDate: new Date("2024-04-05"), endDate: new Date("2024-04-05"), title: "New Project Alpha Planning", assignedTo: 'emp1', category: 'meeting', status: 'planned' },
+    { id: "app5", startDate: new Date("2024-05-20"), endDate: new Date("2024-05-24"), title: "Company Offsite Event", category: 'personal', status: 'planned' },
+    { id: "app6", startDate: new Date("2024-06-15"), endDate: new Date("2024-06-15"), title: "Mid-year Financial Report", assignedTo: 'emp2', category: 'deadline', status: 'planned' },
+    // Q3
+    { id: "app7", startDate: new Date("2024-07-20"), endDate: new Date("2024-07-20"), title: "Project Kick-off with Client A", description: "Initial meeting to discuss project scope and deliverables.", assignedTo: 'emp2', category: 'meeting', status: 'completed' },
+    { id: "app8", startDate: new Date("2024-07-22"), endDate: new Date("2024-07-24"), title: "Focus: CRM Development", description: "Focus block for CRM development.", assignedTo: 'emp1', category: 'work', status: 'ongoing' },
+    { id: "app9", startDate: new Date("2024-08-10"), endDate: new Date("2024-08-10"), title: "Marketing Strategy Session", category: 'meeting', status: 'planned' },
+    { id: "app10", startDate: new Date("2024-09-25"), endDate: new Date("2024-09-25"), title: "Q3 Review Deadline", assignedTo: 'emp2', category: 'deadline', status: 'planned' },
+    // Q4
+    { id: "app11", startDate: new Date("2024-10-07"), endDate: new Date("2024-10-07"), title: "Q4 Planning", category: 'meeting', status: 'planned' },
+    { id: "app12", startDate: new Date("2024-11-15"), endDate: new Date("2024-11-20"), title: "Product Launch Prep", assignedTo: 'emp1', category: 'work', status: 'ongoing' },
+    { id: "app13", startDate: new Date("2024-12-20"), endDate: new Date("2024-12-20"), title: "End of Year Party", category: 'personal', status: 'planned' },
 ];
 
 
@@ -37,12 +55,23 @@ const initialEmployees: Employee[] = [
 ];
 
 const initialTasks: Task[] = [
-    { id: 'task1', columnId: 'todo', title: 'Draft Q3 promotional material', description: 'Focus on new port services.', endDate: new Date("2024-07-23"), priority: 'high', assignedTo: 'emp2' },
-    { id: 'task2', columnId: 'todo', title: 'Schedule social media posts for next week', priority: 'medium' },
-    { id: 'task3', columnId: 'inprogress', title: 'Develop new CRM integration feature', startDate: new Date("2024-07-25"), endDate: new Date("2024-07-30"), priority: 'urgent', assignedTo: 'emp1' },
-    { id: 'task4', columnId: 'inprogress', title: 'Onboard new logistics partner', priority: 'high' },
-    { id: 'task5', columnId: 'inreview', title: 'Review Q2 financial report', endDate: new Date("2024-07-28"), priority: 'medium', assignedTo: 'emp2'},
-    { id: 'task6', columnId: 'done', title: 'Finalize employee handbook update', endDate: new Date("2024-07-15"), priority: 'low' },
+    // Q1
+    { id: 'task1', columnId: 'done', title: 'Finalize 2023 tax documents', endDate: new Date("2024-01-30"), priority: 'high', assignedTo: 'emp2' },
+    { id: 'task2', columnId: 'done', title: 'Update employee handbooks', endDate: new Date("2024-02-20"), priority: 'medium' },
+    { id: 'task3', columnId: 'done', title: 'Plan Q2 marketing campaigns', endDate: new Date("2024-03-15"), priority: 'high', assignedTo: 'emp2' },
+    // Q2
+    { id: 'task4', columnId: 'inreview', title: 'Develop prototype for Project Alpha', endDate: new Date("2024-04-25"), priority: 'urgent', assignedTo: 'emp1' },
+    { id: 'task5', columnId: 'inprogress', title: 'Hire new junior developer', endDate: new Date("2024-05-30"), priority: 'high' },
+    { id: 'task6', columnId: 'todo', title: 'Research new cloud providers', endDate: new Date("2024-06-10"), priority: 'medium' },
+    // Q3
+    { id: 'task7', columnId: 'todo', title: 'Draft Q3 promotional material', description: 'Focus on new port services.', endDate: new Date("2024-07-23"), priority: 'high', assignedTo: 'emp2' },
+    { id: 'task8', columnId: 'inprogress', title: 'Develop new CRM integration feature', startDate: new Date("2024-07-25"), endDate: new Date("2024-07-30"), priority: 'urgent', assignedTo: 'emp1' },
+    { id: 'task9', columnId: 'done', title: 'Onboard new logistics partner', endDate: new Date("2024-08-15"), priority: 'high' },
+    { id: 'task10', columnId: 'inreview', title: 'Review Q2 financial report', endDate: new Date("2024-07-28"), priority: 'medium', assignedTo: 'emp2'},
+    // Q4
+    { id: 'task11', columnId: 'todo', title: 'Prepare for holiday sales season', startDate: new Date("2024-10-01"), endDate: new Date("2024-10-31"), priority: 'high' },
+    { id: 'task12', columnId: 'inprogress', title: 'Finalize 2025 budget', endDate: new Date("2024-11-25"), priority: 'urgent', assignedTo: 'emp2' },
+    { id: 'task13', columnId: 'todo', title: 'Plan end-of-year team assessment', endDate: new Date("2024-12-05"), priority: 'medium' },
 ];
 
 interface AppContextType {
