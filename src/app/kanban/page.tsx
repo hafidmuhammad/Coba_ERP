@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PlusCircle, MoreHorizontal, Edit, Trash2, CalendarIcon, User, Flag, Search, AreaChart } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -58,6 +58,16 @@ const getPriorityClassName = (priority: Task['priority']) => {
         case 'medium': return 'bg-blue-500 border-blue-500 text-white';
         case 'low': return 'bg-gray-500 border-gray-500 text-white';
         default: return 'bg-muted text-muted-foreground';
+    }
+};
+
+const getPriorityCardClasses = (priority?: Task['priority']) => {
+    switch (priority) {
+        case 'urgent': return 'bg-red-500/10 border-l-red-500';
+        case 'high': return 'bg-orange-500/10 border-l-orange-500';
+        case 'medium': return 'bg-blue-500/10 border-l-blue-500';
+        case 'low': return 'bg-gray-500/10 border-l-gray-500';
+        default: return 'bg-card/80 border-l-transparent';
     }
 };
 
@@ -198,7 +208,11 @@ function TaskCard({ task, onEdit, onDelete, isOverlay, employeeMap }: { task: Ta
   const dateDisplay = formatDateRange(task.startDate, task.endDate);
 
   return (
-    <Card className={cn("mb-4 bg-card/80 backdrop-blur-sm hover:shadow-md transition-shadow", isOverlay && "shadow-xl ring-2 ring-primary")}>
+    <Card className={cn(
+        "mb-4 backdrop-blur-sm hover:shadow-md transition-shadow border-l-4", 
+        getPriorityCardClasses(task.priority),
+        isOverlay && "shadow-xl ring-2 ring-primary bg-card"
+    )}>
       <CardContent className="p-3">
         <div className="flex justify-between items-start mb-2">
           <p className="font-semibold text-sm leading-snug pr-2">{task.title}</p>
