@@ -5,7 +5,7 @@ import { useAppContext } from '@/contexts/app-context';
 import type { Task } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PlusCircle, MoreHorizontal } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,21 +55,26 @@ const taskSchema = z.object({
   description: z.string().optional(),
 });
 
-function TaskForm({ onFinished }: { onFinished: () => void }) {
-  const { addTask } = useAppContext();
+function TaskForm({ task, onFinished }: { task?: Task, onFinished: () => void }) {
+  const { addTask, updateTask } = useAppContext();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
-      title: "",
-      description: "",
+      title: task?.title || "",
+      description: task?.description || "",
     },
   });
 
   const onSubmit = (values: z.infer<typeof taskSchema>) => {
-    addTask({ ...values, columnId: 'todo' });
-    toast({ title: "Success", description: "Task added." });
+    if (task) {
+      updateTask({ ...task, ...values });
+      toast({ title: "Success", description: "Task updated." });
+    } else {
+      addTask({ ...values, columnId: 'todo' });
+      toast({ title: "Success", description: "Task added." });
+    }
     onFinished();
     form.reset();
   };
@@ -116,7 +121,7 @@ function TaskForm({ onFinished }: { onFinished: () => void }) {
           <DialogClose asChild>
             <Button type="button" variant="ghost">Cancel</Button>
           </DialogClose>
-          <Button type="submit">Add Task</Button>
+          <Button type="submit">{task ? 'Save Task' : 'Add Task'}</Button>
         </DialogFooter>
       </form>
     </Form>
@@ -124,7 +129,7 @@ function TaskForm({ onFinished }: { onFinished: () => void }) {
 }
 
 
-function TaskCard({ task }: { task: Task }) {
+function TaskCard({ task, onEdit, onDelete }: { task: Task; onEdit: (task: Task) => void; onDelete: (id: string) => void; }) {
   const { updateTask } = useAppContext();
 
   const handleMove = (newColumnId: Task['columnId']) => {
@@ -152,6 +157,15 @@ function TaskCard({ task }: { task: Task }) {
                   </DropdownMenuItem>
                 )
               ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onEdit(task)}>
+                <Edit className="mr-2 h-4 w-4" />
+                <span>Edit</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onDelete(task.id)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                <Trash2 className="mr-2 h-4 w-4" />
+                <span>Delete</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -164,8 +178,17 @@ function TaskCard({ task }: { task: Task }) {
 }
 
 export default function KanbanPage() {
-  const { tasks } = useAppContext(); 
+  const { tasks, deleteTask } = useAppContext(); 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+  const { toast } = useToast();
+
+  const handleDelete = (id: string) => {
+    if (window.confirm("Are you sure you want to delete this task?")) {
+        deleteTask(id);
+        toast({ title: "Success", description: "Task deleted." });
+    }
+  };
 
   const tasksByColumn = useMemo(() => {
     const grouped: Record<string, Task[]> = {};
@@ -194,6 +217,19 @@ export default function KanbanPage() {
                 </DialogContent>
             </Dialog>
         </div>
+
+        <Dialog open={!!editingTask} onOpenChange={(isOpen) => !isOpen && setEditingTask(undefined)}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit Task</DialogTitle>
+                </DialogHeader>
+                <TaskForm 
+                    task={editingTask} 
+                    onFinished={() => setEditingTask(undefined)} 
+                />
+            </DialogContent>
+        </Dialog>
+
         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
             {columns.map(column => (
                 <div key={column.id} className="bg-muted/50 rounded-lg h-full flex flex-col">
@@ -208,7 +244,7 @@ export default function KanbanPage() {
                     <div className="p-4 flex-1 overflow-y-auto">
                         {tasksByColumn[column.id]?.length > 0 ? (
                           tasksByColumn[column.id].map(task => (
-                              <TaskCard key={task.id} task={task} />
+                              <TaskCard key={task.id} task={task} onEdit={setEditingTask} onDelete={handleDelete} />
                           ))
                         ) : (
                           <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">

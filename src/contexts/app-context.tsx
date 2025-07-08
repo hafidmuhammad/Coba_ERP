@@ -61,6 +61,7 @@ interface AppContextType {
   deleteEmployee: (id: string) => void;
   addTask: (item: Omit<Task, "id">) => void;
   updateTask: (item: Task) => void;
+  deleteTask: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -125,6 +126,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setTasks((prev) => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
   };
 
+  const deleteTask = (id: string) => {
+    setTasks((prev) => prev.filter(item => item.id !== id));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -147,6 +152,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         deleteEmployee,
         addTask,
         updateTask,
+        deleteTask,
       }}
     >
       {children}
