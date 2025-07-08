@@ -30,3 +30,12 @@ export interface Product {
   price: number;
   quantity: number;
 }
+
+export interface Employee {
+  id: string;
+  name: string;
+  position: string;
+  email: string;
+  phone: string;
+  salary: number;
+}
