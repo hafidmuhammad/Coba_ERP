@@ -1,14 +1,25 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { format, isSameDay, isWithinInterval, eachDayOfInterval, startOfDay, endOfDay } from "date-fns";
+import {
+  format,
+  isSameDay,
+  eachDayOfInterval,
+  startOfDay,
+  endOfDay,
+  areIntervalsOverlapping,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+} from "date-fns";
 import { DateRange } from "react-day-picker";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useAppContext } from "@/contexts/app-context";
 import {
   Dialog,
@@ -80,9 +91,11 @@ type CalendarEvent = {
 function AppointmentForm({
   appointment,
   onFinished,
+  initialDateRange,
 }: {
   appointment?: Appointment;
   onFinished: () => void;
+  initialDateRange?: DateRange;
 }) {
   const { addAppointment, updateAppointment, employees } = useAppContext();
   const { toast } = useToast();
@@ -92,7 +105,7 @@ function AppointmentForm({
     defaultValues: {
       title: appointment?.title || "",
       description: appointment?.description || "",
-      dateRange: appointment ? { from: appointment.startDate, to: appointment.endDate } : undefined,
+      dateRange: appointment ? { from: appointment.startDate, to: appointment.endDate } : initialDateRange,
       assignedTo: appointment?.assignedTo || "unassigned",
       category: appointment?.category || 'meeting',
       status: appointment?.status || 'planned',
@@ -234,7 +247,7 @@ function AppointmentForm({
 
 export default function CalendarPage() {
   const { appointments, deleteAppointment, employees, tasks } = useAppContext();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: startOfWeek(new Date()), to: endOfWeek(new Date()) });
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | undefined>(undefined);
   const [filters, setFilters] = useState({ category: 'all', status: 'all' });
@@ -271,20 +284,33 @@ export default function CalendarPage() {
     return [...fromAppointments, ...fromTasks];
   }, [appointments, tasks]);
   
-  const eventsForSelectedDay = useMemo(() => {
+  const eventsForSelectedRange = useMemo(() => {
+    if (!dateRange?.from) return [];
+
+    const selectedInterval = {
+      start: startOfDay(dateRange.from),
+      end: endOfDay(dateRange.to || dateRange.from),
+    };
+
     return allEvents
-      .filter((event) => isWithinInterval(selectedDate, { start: startOfDay(event.startDate), end: endOfDay(event.endDate) }))
+      .filter((event) => {
+        const eventInterval = {
+            start: startOfDay(event.startDate),
+            end: endOfDay(event.endDate),
+        };
+        return areIntervalsOverlapping(selectedInterval, eventInterval);
+      })
       .filter(event => {
         if (event.type === 'appointment') {
             const app = event.original as Appointment;
             const categoryMatch = filters.category === 'all' || app.category === filters.category;
-            const statusMatch = filters.status === 'all' || app.status === statusMatch;
+            const statusMatch = filters.status === 'all' || app.status === filters.status;
             return categoryMatch && statusMatch;
         }
-        return true; // Tasks are not filtered by these dropdowns for now
+        return true;
       })
       .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
-  }, [allEvents, selectedDate, filters]);
+  }, [allEvents, dateRange, filters]);
   
   const handleDelete = (id: string) => {
     if(window.confirm("Are you sure you want to delete this appointment?")) {
@@ -307,10 +333,26 @@ export default function CalendarPage() {
 
   const formatDateRange = (start: Date, end: Date) => {
       if (isSameDay(start, end)) {
-          return format(start, "MMM d");
+          return format(start, "MMM d, yyyy");
       }
-      return `${format(start, "MMM d")} - ${format(end, "MMM d")}`;
+      return `${format(start, "MMM d")} - ${format(end, "MMM d, yyyy")}`;
   }
+
+  const formatHeaderDateRange = (range: DateRange | undefined) => {
+    if (!range?.from) {
+      return "Select a date range";
+    }
+    const start = range.from;
+    const end = range.to || range.from;
+
+    if (isSameDay(start, end)) {
+      return format(start, "MMMM d, yyyy");
+    }
+    if (start.getMonth() === end.getMonth()) {
+        return `${format(start, "MMM d")} - ${format(end, "d, yyyy")}`;
+    }
+    return `${format(start, "MMM d, yyyy")} - ${format(end, "MMM d, yyyy")}`;
+  };
 
   return (
     <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
@@ -318,9 +360,9 @@ export default function CalendarPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
             <div className="flex-1">
-              <CardTitle>{format(selectedDate, "MMMM d, yyyy")}</CardTitle>
+              <CardTitle>{formatHeaderDateRange(dateRange)}</CardTitle>
               <CardDescription>
-                {eventsForSelectedDay.length} event(s) scheduled
+                {eventsForSelectedRange.length} event(s) found in this period
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -354,7 +396,7 @@ export default function CalendarPage() {
                         <DialogHeader>
                             <DialogTitle>Add New Event</DialogTitle>
                         </DialogHeader>
-                        <AppointmentForm onFinished={() => setIsAddFormOpen(false)} />
+                        <AppointmentForm onFinished={() => setIsAddFormOpen(false)} initialDateRange={dateRange} />
                     </DialogContent>
                 </Dialog>
             </div>
@@ -362,8 +404,8 @@ export default function CalendarPage() {
         </CardHeader>
         <CardContent className="pr-2">
           <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-4">
-            {eventsForSelectedDay.length > 0 ? (
-              eventsForSelectedDay.map((event) => {
+            {eventsForSelectedRange.length > 0 ? (
+              eventsForSelectedRange.map((event) => {
                 const assignedUserName = event.assignedTo ? employeeMap.get(event.assignedTo) : undefined;
                 
                 if (event.type === 'appointment') {
@@ -467,7 +509,7 @@ export default function CalendarPage() {
               })
             ) : (
               <p className="text-sm text-muted-foreground text-center py-12">
-                No events scheduled for this day, or none match your filters.
+                No events scheduled for this period, or none match your filters.
               </p>
             )}
           </div>
@@ -478,14 +520,22 @@ export default function CalendarPage() {
       <Card className="h-fit">
         <CardContent className="p-0">
             <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
+                mode="range"
+                selected={dateRange}
+                onSelect={setDateRange}
                 className="w-full"
                 modifiers={{ booked: bookedDays }}
                 modifiersStyles={{ booked: { border: '2px solid hsl(var(--primary))', borderRadius: 'var(--radius)' } }}
             />
         </CardContent>
+        <CardFooter className="flex-col items-start gap-2 p-4 border-t">
+            <p className="text-sm font-medium text-muted-foreground">Quick Select</p>
+            <div className="flex gap-2 w-full">
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => setDateRange({ from: new Date(), to: new Date() })}>Today</Button>
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => setDateRange({ from: startOfWeek(new Date()), to: endOfWeek(new Date()) })}>This Week</Button>
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })}>This Month</Button>
+            </div>
+        </CardFooter>
       </Card>
       </div>
 
