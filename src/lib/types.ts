@@ -14,13 +14,17 @@ export interface Expense {
   description: string;
 }
 
+export type AppointmentCategory = 'meeting' | 'deadline' | 'work' | 'personal';
+
 export interface Appointment {
   id: string;
   date: Date;
   startTime: string;
   duration: number; // in minutes
   title: string;
-  participants?: string;
+  description?: string;
+  assignedTo?: string; // Employee ID
+  category: AppointmentCategory;
 }
 
 export interface Product {

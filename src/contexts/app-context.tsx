@@ -17,8 +17,10 @@ const initialExpenses: Expense[] = [
 ];
 
 const initialAppointments: Appointment[] = [
-  { id: "app1", date: new Date(), startTime: "10:00", duration: 60, title: "Project Kick-off with Client A", participants: "John Doe, Jane Smith" },
-  { id: "app2", date: new Date(), startTime: "14:00", duration: 30, title: "Team Stand-up", participants: "Development Team" },
+    { id: "app1", date: new Date(), startTime: "10:00", duration: 60, title: "Project Kick-off with Client A", description: "Initial meeting to discuss project scope and deliverables.", assignedTo: 'emp2', category: 'meeting' },
+    { id: "app2", date: new Date(new Date().setDate(new Date().getDate() + 1)), startTime: "14:00", duration: 30, title: "Team Stand-up", description: "Daily sync-up for the dev team.", assignedTo: 'emp1', category: 'meeting' },
+    { id: "app3", date: new Date(new Date().setDate(new Date().getDate() + 2)), startTime: "09:00", duration: 240, title: "Work on CRM feature", description: "Focus block for CRM development.", assignedTo: 'emp1', category: 'work' },
+    { id: "app4", date: new Date(new Date().setDate(new Date().getDate() + 2)), startTime: "17:00", duration: 60, title: "Submit Q3 Report", description: "Finalize and submit the quarterly financial report.", assignedTo: 'emp2', category: 'deadline' },
 ];
 
 const initialProducts: Product[] = [
