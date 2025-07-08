@@ -1,16 +1,16 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
-import { Revenue, Expense, Appointment, Product, Employee, Task } from "@/lib/types";
+import { Revenue, Expense, Appointment, Product, Employee, Task, Customer } from "@/lib/types";
 
 // Mock Data
 const initialRevenue: Revenue[] = [
-  { id: "rev1", date: new Date("2023-11-15"), amount: 1200, customer: "Client A", description: "Web Design Project" },
-  { id: "rev2", date: new Date("2023-11-20"), amount: 750, customer: "Client B", description: "Consulting Services" },
-  { id: "rev3", date: new Date("2023-12-05"), amount: 2500, customer: "Client C", description: "E-commerce Site" },
-  { id: "rev4", date: new Date("2024-01-20"), amount: 1800, customer: "Client A", description: "SEO Optimization" },
-  { id: "rev5", date: new Date("2024-02-10"), amount: 950, customer: "Client D", description: "Logo Design" },
-  { id: "rev6", date: new Date("2024-03-25"), amount: 3200, customer: "Client B", description: "Full Branding Package" },
+  { id: "rev1", date: new Date("2023-11-15"), amount: 1200, customer: "CV Makmur Jaya", description: "Web Design Project" },
+  { id: "rev2", date: new Date("2023-11-20"), amount: 750, customer: "Budi Santoso", description: "Consulting Services" },
+  { id: "rev3", date: new Date("2023-12-05"), amount: 2500, customer: "PT Aman Sentosa", description: "E-commerce Site" },
+  { id: "rev4", date: new Date("2024-01-20"), amount: 1800, customer: "CV Makmur Jaya", description: "SEO Optimization" },
+  { id: "rev5", date: new Date("2024-02-10"), amount: 950, customer: "Toko Kelontong Berkah", description: "Logo Design" },
+  { id: "rev6", date: new Date("2024-03-25"), amount: 3200, customer: "PT Aman Sentosa", description: "Full Branding Package" },
 ];
 
 const initialExpenses: Expense[] = [
@@ -52,7 +52,6 @@ const initialAppointments: Appointment[] = [
     { id: "app20", startDate: new Date("2024-12-20"), endDate: new Date("2024-12-20"), title: "End of Year Party", category: 'personal', status: 'planned' },
 ];
 
-
 const initialProducts: Product[] = [
   { id: "prod1", name: "Standard Web Package", description: "Basic website design and development.", price: 1500, quantity: 10 },
   { id: "prod2", name: "E-commerce Solution", description: "Full online store with payment gateway.", price: 4000, quantity: 5 },
@@ -91,6 +90,14 @@ const initialTasks: Task[] = [
     { id: 'task17', columnId: 'todo', title: 'Order new company swag', endDate: new Date("2024-11-10"), priority: 'low', assignedTo: 'emp2' },
 ];
 
+const initialCustomers: Customer[] = [
+    { id: 'cust1', name: 'CV Makmur Jaya', category: 'Perusahaan', type: 'B2B', email: 'makmur@jaya.com', phone: '021-123456', address: 'Jl. Industri No. 1, Jakarta', picName: 'Bapak Subagio' },
+    { id: 'cust2', name: 'PT Aman Sentosa', category: 'Perusahaan', type: 'B2B', email: 'contact@amansentosa.co.id', phone: '031-987654', address: 'Jl. Raya Darmo 50, Surabaya', picName: 'Ibu Rina' },
+    { id: 'cust3', name: 'Budi Santoso', category: 'Perorangan', type: 'B2C', email: 'budi.s@gmail.com', phone: '081234567890', address: 'Jl. Kenangan Indah 3, Bandung', picName: 'Budi Santoso' },
+    { id: 'cust4', name: 'Toko Kelontong Berkah', category: 'Mitra', type: 'Reseller', email: 'berkah@tokokelontong.com', phone: '085678901234', address: 'Jl. Pasar Baru No. 12, Medan', picName: 'Pak Tono' },
+    { id: 'cust5', name: 'Luxury Goods ID', category: 'VIP', type: 'B2C', email: 'vip.service@luxury.id', phone: '089987654321', address: 'Jl. Jenderal Sudirman Kav. 5, Jakarta', picName: 'Personal Shopper' },
+];
+
 interface AppContextType {
   revenue: Revenue[];
   expenses: Expense[];
@@ -98,6 +105,7 @@ interface AppContextType {
   products: Product[];
   employees: Employee[];
   tasks: Task[];
+  customers: Customer[];
   addRevenue: (item: Omit<Revenue, "id">) => void;
   addExpense: (item: Omit<Expense, "id">) => void;
   addAppointment: (item: Omit<Appointment, "id">) => void;
@@ -113,6 +121,9 @@ interface AppContextType {
   updateTask: (item: Task) => void;
   deleteTask: (id: string) => void;
   setAllTasks: (tasks: Task[] | ((tasks: Task[]) => Task[])) => void;
+  addCustomer: (item: Omit<Customer, "id">) => void;
+  updateCustomer: (item: Customer) => void;
+  deleteCustomer: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -124,6 +135,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
 
   const addRevenue = (item: Omit<Revenue, "id">) => {
     setRevenue((prev) => [...prev, { ...item, id: `rev${Date.now()}` }]);
@@ -184,6 +196,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const setAllTasks = (newTasks: Task[] | ((tasks: Task[]) => Task[])) => {
     setTasks(newTasks);
   };
+  
+  const addCustomer = (item: Omit<Customer, "id">) => {
+    setCustomers((prev) => [...prev, { ...item, id: `cust${Date.now()}` }]);
+  };
+
+  const updateCustomer = (updatedItem: Customer) => {
+    setCustomers((prev) => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
+  };
+
+  const deleteCustomer = (id: string) => {
+    setCustomers((prev) => prev.filter(item => item.id !== id));
+  };
 
   return (
     <AppContext.Provider
@@ -194,6 +218,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         products,
         employees,
         tasks,
+        customers,
         addRevenue,
         addExpense,
         addAppointment,
@@ -209,6 +234,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         updateTask,
         deleteTask,
         setAllTasks,
+        addCustomer,
+        updateCustomer,
+        deleteCustomer,
       }}
     >
       {children}

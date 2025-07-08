@@ -63,3 +63,17 @@ export interface Holiday {
   title: string;
   type: 'holiday';
 }
+
+export type CustomerCategory = 'Perorangan' | 'Perusahaan' | 'VIP' | 'Mitra';
+export type CustomerType = 'B2B' | 'B2C' | 'Reseller';
+
+export interface Customer {
+  id: string;
+  name: string;
+  category: CustomerCategory;
+  type: CustomerType;
+  email: string;
+  phone: string;
+  address: string;
+  picName: string;
+}
