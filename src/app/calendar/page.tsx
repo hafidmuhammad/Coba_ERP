@@ -31,9 +31,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import type { Appointment, AppointmentCategory } from "@/lib/types";
+import type { Appointment, AppointmentCategory, AppointmentStatus } from "@/lib/types";
 import { PlusCircle, Edit, Trash2, Clock, User, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 
 const appointmentCategories: Record<AppointmentCategory, { label: string; colorClass: string }> = {
@@ -43,6 +44,13 @@ const appointmentCategories: Record<AppointmentCategory, { label: string; colorC
   personal: { label: 'Personal', colorClass: 'border-chart-3' },
 };
 
+const appointmentStatuses: Record<AppointmentStatus, { label: string; colorClass: string }> = {
+    planned: { label: 'Planned', colorClass: 'bg-chart-2' },
+    ongoing: { label: 'Ongoing', colorClass: 'bg-chart-4' },
+    completed: { label: 'Completed', colorClass: 'bg-chart-3' },
+    cancelled: { label: 'Cancelled', colorClass: 'bg-muted' },
+};
+
 const appointmentSchema = z.object({
   title: z.string().min(2, "Title must be at least 2 characters."),
   description: z.string().optional(),
@@ -50,6 +58,7 @@ const appointmentSchema = z.object({
   duration: z.coerce.number().positive("Duration must be a positive number."),
   assignedTo: z.string().optional(),
   category: z.enum(['meeting', 'deadline', 'work', 'personal']).default('meeting'),
+  status: z.enum(['planned', 'ongoing', 'completed', 'cancelled']).default('planned'),
 });
 
 function AppointmentForm({
@@ -71,13 +80,18 @@ function AppointmentForm({
       description: appointment?.description || "",
       startTime: appointment?.startTime || "",
       duration: appointment?.duration || 60,
-      assignedTo: appointment?.assignedTo || undefined,
+      assignedTo: appointment?.assignedTo || "unassigned",
       category: appointment?.category || 'meeting',
+      status: appointment?.status || 'planned',
     },
   });
 
   const onSubmit = (values: z.infer<typeof appointmentSchema>) => {
-    const appointmentData = { ...values, date: selectedDate };
+    const finalValues = { 
+        ...values, 
+        assignedTo: values.assignedTo === 'unassigned' ? undefined : values.assignedTo 
+    };
+    const appointmentData = { ...finalValues, date: selectedDate };
     if (appointment) {
       updateAppointment({ ...appointment, ...appointmentData });
       toast({ title: "Success", description: "Appointment updated." });
@@ -129,24 +143,37 @@ function AppointmentForm({
                         <FormControl><SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger></FormControl>
                         <SelectContent>
                             {Object.entries(appointmentCategories).map(([key, value]) => 
-                                <SelectItem key={key} value={key}>{value.label}</SelectItem>
+                                <SelectItem key={key} value={key as AppointmentCategory}>{value.label}</SelectItem>
                             )}
                         </SelectContent>
                     </Select>
                 </FormItem>
             )} />
-            <FormField control={form.control} name="assignedTo" render={({ field }) => (
-                <FormItem><FormLabel>Assigned To</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select a team member" /></SelectTrigger></FormControl>
+            <FormField control={form.control} name="status" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
                         <SelectContent>
-                            <SelectItem value="unassigned">Unassigned</SelectItem>
-                            {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+                            {Object.entries(appointmentStatuses).map(([key, value]) => 
+                                <SelectItem key={key} value={key as AppointmentStatus}>{value.label}</SelectItem>
+                            )}
                         </SelectContent>
                     </Select>
                 </FormItem>
             )} />
         </div>
+         <FormField control={form.control} name="assignedTo" render={({ field }) => (
+            <FormItem><FormLabel>Assigned To</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select a team member" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                        {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </FormItem>
+        )} />
         <DialogFooter>
             <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
             <Button type="submit">Save</Button>
@@ -162,6 +189,7 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | undefined>(undefined);
+  const [filters, setFilters] = useState({ category: 'all', status: 'all' });
   const { toast } = useToast();
 
   const employeeMap = useMemo(() => new Map(employees.map(e => [e.id, e.name])), [employees]);
@@ -170,8 +198,10 @@ export default function CalendarPage() {
   const dailyAppointments = useMemo(() => {
     return appointments
       .filter((app) => isSameDay(app.date, selectedDate))
+      .filter(app => filters.category === 'all' || app.category === filters.category)
+      .filter(app => filters.status === 'all' || app.status === filters.status)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
-  }, [appointments, selectedDate]);
+  }, [appointments, selectedDate, filters]);
   
   const handleDelete = (id: string) => {
     if(window.confirm("Are you sure you want to delete this appointment?")) {
@@ -180,59 +210,69 @@ export default function CalendarPage() {
     }
   }
 
-  return (
-    <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-      <div className="lg:col-span-2">
-      <Card>
-        <CardHeader>
-            <CardTitle>Team Scheduler</CardTitle>
-            <CardDescription>Manage appointments and events for your team.</CardDescription>
-        </CardHeader>
-        <CardContent className="p-2">
-            <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                className="w-full"
-                modifiers={{ booked: appointments.map(a => a.date) }}
-                modifiersStyles={{ booked: { border: '2px solid hsl(var(--primary))', borderRadius: 'var(--radius)' } }}
-            />
-        </CardContent>
-      </Card>
-      </div>
+  const handleFilterChange = (filterName: string, value: string) => {
+      setFilters(prev => ({...prev, [filterName]: value}));
+  }
 
-      <Card className="lg:col-span-1 h-fit">
+  return (
+    <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
+      <Card className="lg:col-span-2">
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            <div className="flex-1">
               <CardTitle>{format(selectedDate, "MMMM d, yyyy")}</CardTitle>
               <CardDescription>
-                {dailyAppointments.length} event(s)
+                {dailyAppointments.length} event(s) scheduled
               </CardDescription>
             </div>
-            <Dialog open={isAddFormOpen} onOpenChange={setIsAddFormOpen}>
-                <DialogTrigger asChild>
-                    <Button size="icon" variant="outline"><PlusCircle className="h-4 w-4"/></Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Add Event</DialogTitle>
-                    </DialogHeader>
-                    <AppointmentForm selectedDate={selectedDate} onFinished={() => setIsAddFormOpen(false)} />
-                </DialogContent>
-            </Dialog>
+            <div className="flex items-center gap-2">
+                 <Select value={filters.category} onValueChange={(value) => handleFilterChange('category', value)}>
+                    <SelectTrigger className="w-full sm:w-[150px]">
+                        <SelectValue placeholder="Filter by category..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {Object.entries(appointmentCategories).map(([key, {label}]) => (
+                            <SelectItem key={key} value={key}>{label}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                 <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+                    <SelectTrigger className="w-full sm:w-[150px]">
+                        <SelectValue placeholder="Filter by status..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        {Object.entries(appointmentStatuses).map(([key, {label}]) => (
+                            <SelectItem key={key} value={key}>{label}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Dialog open={isAddFormOpen} onOpenChange={setIsAddFormOpen}>
+                    <DialogTrigger asChild>
+                        <Button size="icon" variant="outline"><PlusCircle className="h-4 w-4"/></Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Add New Event</DialogTitle>
+                        </DialogHeader>
+                        <AppointmentForm selectedDate={selectedDate} onFinished={() => setIsAddFormOpen(false)} />
+                    </DialogContent>
+                </Dialog>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+        <CardContent className="pr-2">
+          <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-4">
             {dailyAppointments.length > 0 ? (
               dailyAppointments.map((app) => {
                 const categoryInfo = appointmentCategories[app.category];
+                const statusInfo = appointmentStatuses[app.status];
                 const assignedUserName = app.assignedTo ? employeeMap.get(app.assignedTo) : undefined;
 
                 return (
-                    <div key={app.id} className={cn("relative flex items-start gap-3 rounded-lg border p-3 border-l-4", categoryInfo.colorClass)}>
-                        <div className="flex-1 space-y-1">
+                    <div key={app.id} className={cn("relative flex items-start gap-4 rounded-lg border p-4 border-l-4 transition-all hover:shadow-md", categoryInfo.colorClass)}>
+                        <div className="flex-1 space-y-2">
                             <div className="flex justify-between items-start">
                                 <p className="font-semibold leading-snug">{app.title}</p>
                                 <div className="flex gap-1 absolute top-2 right-2">
@@ -247,11 +287,10 @@ export default function CalendarPage() {
                                         <AppointmentForm appointment={app} selectedDate={selectedDate} onFinished={() => setEditingAppointment(undefined)} />
                                         </DialogContent>
                                     </Dialog>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(app.id)}><Trash2 className="h-4 w-4" /></Button>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(app.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                                 </div>
                             </div>
-
-                            <p className="text-sm text-muted-foreground flex items-center">
+                             <p className="text-sm text-muted-foreground flex items-center">
                                 <Clock className="h-3.5 w-3.5 mr-1.5" />
                                 {app.startTime} ({app.duration} min)
                             </p>
@@ -260,16 +299,27 @@ export default function CalendarPage() {
                             
                             <div className="flex items-center justify-between pt-2">
                                 <div className="flex items-center gap-2">
-                                    {assignedUserName && (
+                                    {assignedUserName ? (
                                         <>
                                             <Avatar className="h-6 w-6"><AvatarFallback>{getInitials(assignedUserName)}</AvatarFallback></Avatar>
                                             <span className="text-xs text-muted-foreground">{assignedUserName}</span>
                                         </>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
+                                            <Avatar className="h-6 w-6"><AvatarFallback><User className="h-4 w-4 text-muted-foreground" /></AvatarFallback></Avatar>
+                                            <span className="text-xs text-muted-foreground">Unassigned</span>
+                                        </div>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    <Tag className="h-3 w-3" />
-                                    <span>{categoryInfo.label}</span>
+                                <div className="flex items-center gap-4">
+                                    <Badge variant="secondary" className="flex items-center gap-2">
+                                        <Tag className="h-3 w-3" />
+                                        <span>{categoryInfo.label}</span>
+                                    </Badge>
+                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <span className={cn("h-2.5 w-2.5 rounded-full", statusInfo.colorClass)} />
+                                        <span>{statusInfo.label}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -277,13 +327,29 @@ export default function CalendarPage() {
                 )
               })
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                No events scheduled for this day.
+              <p className="text-sm text-muted-foreground text-center py-12">
+                No events scheduled for this day, or none match your filters.
               </p>
             )}
           </div>
         </CardContent>
       </Card>
+      
+      <div className="lg:col-span-1">
+      <Card className="h-fit">
+        <CardContent className="p-0">
+            <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && setSelectedDate(date)}
+                className="w-full"
+                modifiers={{ booked: appointments.map(a => a.date) }}
+                modifiersStyles={{ booked: { border: '2px solid hsl(var(--primary))', borderRadius: 'var(--radius)' } }}
+            />
+        </CardContent>
+      </Card>
+      </div>
+
     </div>
   );
 }

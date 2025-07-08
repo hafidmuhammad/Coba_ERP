@@ -15,6 +15,7 @@ export interface Expense {
 }
 
 export type AppointmentCategory = 'meeting' | 'deadline' | 'work' | 'personal';
+export type AppointmentStatus = 'planned' | 'ongoing' | 'completed' | 'cancelled';
 
 export interface Appointment {
   id: string;
@@ -25,6 +26,7 @@ export interface Appointment {
   description?: string;
   assignedTo?: string; // Employee ID
   category: AppointmentCategory;
+  status: AppointmentStatus;
 }
 
 export interface Product {

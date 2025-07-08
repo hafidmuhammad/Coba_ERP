@@ -17,11 +17,13 @@ const initialExpenses: Expense[] = [
 ];
 
 const initialAppointments: Appointment[] = [
-    { id: "app1", date: new Date(), startTime: "10:00", duration: 60, title: "Project Kick-off with Client A", description: "Initial meeting to discuss project scope and deliverables.", assignedTo: 'emp2', category: 'meeting' },
-    { id: "app2", date: new Date(new Date().setDate(new Date().getDate() + 1)), startTime: "14:00", duration: 30, title: "Team Stand-up", description: "Daily sync-up for the dev team.", assignedTo: 'emp1', category: 'meeting' },
-    { id: "app3", date: new Date(new Date().setDate(new Date().getDate() + 2)), startTime: "09:00", duration: 240, title: "Work on CRM feature", description: "Focus block for CRM development.", assignedTo: 'emp1', category: 'work' },
-    { id: "app4", date: new Date(new Date().setDate(new Date().getDate() + 2)), startTime: "17:00", duration: 60, title: "Submit Q3 Report", description: "Finalize and submit the quarterly financial report.", assignedTo: 'emp2', category: 'deadline' },
+    { id: "app1", date: new Date("2024-07-20T10:00:00"), startTime: "10:00", duration: 60, title: "Project Kick-off with Client A", description: "Initial meeting to discuss project scope and deliverables.", assignedTo: 'emp2', category: 'meeting', status: 'completed' },
+    { id: "app2", date: new Date("2024-07-21T14:00:00"), startTime: "14:00", duration: 30, title: "Team Stand-up", description: "Daily sync-up for the dev team.", assignedTo: 'emp1', category: 'meeting', status: 'planned' },
+    { id: "app3", date: new Date("2024-07-22T09:00:00"), startTime: "09:00", duration: 240, title: "Work on CRM feature", description: "Focus block for CRM development.", assignedTo: 'emp1', category: 'work', status: 'ongoing' },
+    { id: "app4", date: new Date("2024-07-22T17:00:00"), startTime: "17:00", duration: 60, title: "Submit Q3 Report", description: "Finalize and submit the quarterly financial report.", assignedTo: 'emp2', category: 'deadline', status: 'planned' },
+    { id: "app5", date: new Date("2024-07-21T11:00:00"), startTime: "11:00", duration: 60, title: "Design Review", description: "Review new UI mockups.", assignedTo: 'emp1', category: 'meeting', status: 'cancelled' },
 ];
+
 
 const initialProducts: Product[] = [
   { id: "prod1", name: "Standard Web Package", description: "Basic website design and development.", price: 1500, quantity: 10 },
@@ -35,12 +37,12 @@ const initialEmployees: Employee[] = [
 ];
 
 const initialTasks: Task[] = [
-    { id: 'task1', columnId: 'todo', title: 'Draft Q3 promotional material', description: 'Focus on new port services.', dueDate: new Date(new Date().setDate(new Date().getDate() + 3)), priority: 'high', assignedTo: 'emp2' },
+    { id: 'task1', columnId: 'todo', title: 'Draft Q3 promotional material', description: 'Focus on new port services.', dueDate: new Date("2024-07-23"), priority: 'high', assignedTo: 'emp2' },
     { id: 'task2', columnId: 'todo', title: 'Schedule social media posts for next week', priority: 'medium' },
-    { id: 'task3', columnId: 'inprogress', title: 'Develop new CRM integration feature', dueDate: new Date(new Date().setDate(new Date().getDate() + 10)), priority: 'urgent', assignedTo: 'emp1' },
+    { id: 'task3', columnId: 'inprogress', title: 'Develop new CRM integration feature', dueDate: new Date("2024-07-30"), priority: 'urgent', assignedTo: 'emp1' },
     { id: 'task4', columnId: 'inprogress', title: 'Onboard new logistics partner', priority: 'high' },
     { id: 'task5', columnId: 'inreview', title: 'Review Q2 financial report', priority: 'medium', assignedTo: 'emp2'},
-    { id: 'task6', columnId: 'done', title: 'Finalize employee handbook update', dueDate: new Date(new Date().setDate(new Date().getDate() - 5)), priority: 'low' },
+    { id: 'task6', columnId: 'done', title: 'Finalize employee handbook update', dueDate: new Date("2024-07-15"), priority: 'low' },
 ];
 
 interface AppContextType {
