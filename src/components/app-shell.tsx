@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import React from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -35,6 +36,7 @@ import {
   Contact,
 } from "lucide-react";
 import { Button } from "./ui/button";
+import { Skeleton } from "./ui/skeleton";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -59,9 +61,40 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = pathname === "/login" || pathname === "/register";
+  const [isClient, setIsClient] = React.useState(false)
+
+  React.useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   if (isAuthPage) {
     return <AuthLayout>{children}</AuthLayout>;
+  }
+
+  if (!isClient) {
+    return (
+        <div className="flex min-h-svh w-full">
+            <div className="hidden md:flex flex-col w-64 border-r p-2 gap-2">
+                 <div className="flex items-center gap-2 h-[52px] p-2">
+                    <Skeleton className="h-8 w-8 rounded-md" />
+                    <Skeleton className="h-6 w-24" />
+                 </div>
+                 <div className="flex flex-col gap-1 px-2">
+                    {navItems.map((item) => (
+                        <Skeleton key={item.href} className="h-8 w-full" />
+                    ))}
+                 </div>
+            </div>
+            <div className="flex-1">
+                <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 lg:h-[60px] lg:px-6">
+                    <Skeleton className="h-8 w-8 rounded-md" />
+                    <div className="flex-1" />
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                </header>
+                <main className="flex-1 p-4 sm:px-6 sm:py-0 md:p-6">{children}</main>
+            </div>
+        </div>
+    )
   }
 
   return (
