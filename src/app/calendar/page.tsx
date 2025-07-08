@@ -56,7 +56,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import type { Appointment, AppointmentCategory, AppointmentStatus, Task, Employee } from "@/lib/types";
-import { PlusCircle, Edit, Trash2, Clock, User, Tag, Calendar as CalendarIcon, Kanban, Flag, ChevronLeft, ChevronRight, Briefcase, UserCheck, CheckCircle, CircleDot } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Clock, User, Tag, Calendar as CalendarIcon, Kanban, Flag, ChevronLeft, ChevronRight, Briefcase, UserCheck, CheckCircle, CircleDot, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
