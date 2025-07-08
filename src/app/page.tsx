@@ -32,6 +32,14 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { format } from "date-fns";
 
 export default function DashboardPage() {
@@ -131,9 +139,28 @@ export default function DashboardPage() {
     },
   } satisfies ChartConfig;
 
+  // --- Data for Top Products Table ---
+  const productSales = revenue.reduce((acc, sale) => {
+    const key = sale.description;
+    if (!acc[key]) {
+        acc[key] = { totalAmount: 0, count: 0 };
+    }
+    acc[key].totalAmount += sale.amount;
+    acc[key].count += 1;
+    return acc;
+  }, {} as Record<string, { totalAmount: number; count: number }>);
+
+  const topProducts = Object.entries(productSales)
+    .map(([description, data]) => ({
+        description,
+        ...data,
+    }))
+    .sort((a, b) => b.totalAmount - a.totalAmount)
+    .slice(0, 5);
+
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
       <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
@@ -351,6 +378,45 @@ export default function DashboardPage() {
                 Not enough data to display chart.
               </div>
             )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Selling Products</CardTitle>
+            <CardDescription>
+              Your best-performing products by revenue.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[40%]">Product</TableHead>
+                  <TableHead className="text-center">Sales</TableHead>
+                  <TableHead className="text-right">Total Revenue</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {topProducts.length > 0 ? (
+                  topProducts.map((product) => (
+                    <TableRow key={product.description}>
+                      <TableCell className="font-medium">{product.description}</TableCell>
+                      <TableCell className="text-center">{product.count}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(product.totalAmount)}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="h-24 text-center">
+                      No sales data available.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>
