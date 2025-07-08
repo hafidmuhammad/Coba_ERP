@@ -5,7 +5,7 @@ import { useAppContext } from '@/contexts/app-context';
 import type { Task } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PlusCircle, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Edit, Trash2, CalendarIcon } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +26,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -37,6 +38,10 @@ import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 type KanbanColumn = {
   id: 'todo' | 'inprogress' | 'inreview' | 'done';
@@ -53,6 +58,7 @@ const columns: KanbanColumn[] = [
 const taskSchema = z.object({
   title: z.string().min(2, "Title must be at least 2 characters."),
   description: z.string().optional(),
+  assignedDate: z.date().optional(),
 });
 
 function TaskForm({ task, onFinished }: { task?: Task, onFinished: () => void }) {
@@ -64,6 +70,7 @@ function TaskForm({ task, onFinished }: { task?: Task, onFinished: () => void })
     defaultValues: {
       title: task?.title || "",
       description: task?.description || "",
+      assignedDate: task?.assignedDate ? new Date(task.assignedDate) : undefined,
     },
   });
 
@@ -117,6 +124,37 @@ function TaskForm({ task, onFinished }: { task?: Task, onFinished: () => void })
                 </div>
             </FormControl>
         </FormItem>
+        <FormField
+          control={form.control}
+          name="assignedDate"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Assigned Date (optional)</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !field.value && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </FormItem>
+          )}
+        />
         <DialogFooter>
           <DialogClose asChild>
             <Button type="button" variant="ghost">Cancel</Button>
@@ -139,7 +177,12 @@ function TaskCard({ task, onEdit, onDelete }: { task: Task; onEdit: (task: Task)
   return (
     <Card className="mb-4 bg-card hover:shadow-md transition-shadow">
       <CardContent className="p-3">
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-center">
+            <p className="text-xs text-muted-foreground">
+                {task.assignedDate ? `Due: ${format(new Date(task.assignedDate), "PPP")}` : 'No due date'}
+            </p>
+        </div>
+        <div className="flex justify-between items-start mt-1">
           <p className="font-semibold text-sm leading-snug">{task.title}</p>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

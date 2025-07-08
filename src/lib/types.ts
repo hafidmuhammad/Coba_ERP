@@ -45,4 +45,5 @@ export interface Task {
   title: string;
   description?: string;
   columnId: 'todo' | 'inprogress' | 'inreview' | 'done';
+  assignedDate?: Date;
 }

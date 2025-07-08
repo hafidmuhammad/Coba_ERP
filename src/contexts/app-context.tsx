@@ -33,12 +33,12 @@ const initialEmployees: Employee[] = [
 ];
 
 const initialTasks: Task[] = [
-  { id: 'task1', columnId: 'todo', title: 'Draft Q3 promotional material', description: 'Focus on new port services.' },
+  { id: 'task1', columnId: 'todo', title: 'Draft Q3 promotional material', description: 'Focus on new port services.', assignedDate: new Date() },
   { id: 'task2', columnId: 'todo', title: 'Schedule social media posts for next week' },
-  { id: 'task3', columnId: 'inprogress', title: 'Develop new CRM integration feature' },
+  { id: 'task3', columnId: 'inprogress', title: 'Develop new CRM integration feature', assignedDate: new Date() },
   { id: 'task4', columnId: 'inprogress', title: 'Onboard new logistics partner' },
   { id: 'task5', columnId: 'inreview', title: 'Review Q2 financial report' },
-  { id: 'task6', columnId: 'done', title: 'Finalize employee handbook update' },
+  { id: 'task6', columnId: 'done', title: 'Finalize employee handbook update', assignedDate: new Date() },
 ];
 
 interface AppContextType {
