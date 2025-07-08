@@ -46,7 +46,7 @@ export interface Employee {
 }
 
 export interface Task {
-  id: string;
+  id:string;
   title: string;
   description?: string;
   columnId: 'todo' | 'inprogress' | 'inreview' | 'done';
@@ -54,4 +54,12 @@ export interface Task {
   endDate?: Date;
   priority?: 'low' | 'medium' | 'high' | 'urgent';
   assignedTo?: string; // Employee ID
+}
+
+export interface Holiday {
+  id: string;
+  startDate: Date;
+  endDate: Date;
+  title: string;
+  type: 'holiday';
 }

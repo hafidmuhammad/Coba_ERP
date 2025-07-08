@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   format,
   startOfMonth,
@@ -55,10 +55,11 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import type { Appointment, AppointmentCategory, AppointmentStatus, Task, Employee } from "@/lib/types";
-import { PlusCircle, Edit, Trash2, Clock, User, Tag, Calendar as CalendarIcon, Kanban, Flag, ChevronLeft, ChevronRight, Briefcase, UserCheck, CheckCircle, CircleDot, Users } from "lucide-react";
+import type { Appointment, AppointmentCategory, AppointmentStatus, Task, Employee, Holiday } from "@/lib/types";
+import { PlusCircle, Edit, Trash2, Clock, User, Tag, Calendar as CalendarIcon, Kanban, Flag, ChevronLeft, ChevronRight, Briefcase, UserCheck, CheckCircle, CircleDot, Users, CalendarOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { getNationalHolidays } from "./actions";
 
 const appointmentCategories: Record<AppointmentCategory, { label: string; colorClass: string, bgClass: string, icon: React.ElementType }> = {
   meeting: { label: 'Meeting', colorClass: 'border-chart-1', bgClass: 'bg-chart-1/20', icon: Users },
@@ -66,6 +67,8 @@ const appointmentCategories: Record<AppointmentCategory, { label: string; colorC
   work: { label: 'Work', colorClass: 'border-chart-4', bgClass: 'bg-chart-4/20', icon: Briefcase },
   personal: { label: 'Personal', colorClass: 'border-chart-3', bgClass: 'bg-chart-3/20', icon: UserCheck },
 };
+
+const holidayCategory = { label: 'Holiday', colorClass: 'border-green-600', bgClass: 'bg-green-600/20', icon: CalendarOff };
 
 const appointmentStatuses: Record<AppointmentStatus, { label: string; colorClass: string, icon: React.ElementType }> = {
     planned: { label: 'Planned', colorClass: 'text-muted-foreground', icon: Clock },
@@ -95,8 +98,8 @@ type CalendarEvent = {
     title: string;
     description?: string;
     assignedTo?: string;
-    type: 'appointment' | 'task';
-    original: Appointment | Task;
+    type: 'appointment' | 'task' | 'holiday';
+    original: Appointment | Task | Holiday;
 }
 
 function AppointmentForm({
@@ -255,6 +258,15 @@ function AppointmentForm({
 }
 
 function EventPill({ event, onEdit }: { event: CalendarEvent, onEdit: (app: Appointment) => void; }) {
+    if (event.type === 'holiday') {
+        return (
+             <div className="w-full text-left p-1.5 rounded-md text-xs mb-1 truncate bg-green-600/20 text-green-800 dark:text-green-300">
+                <CalendarOff className="inline-block h-3 w-3 mr-1"/>
+                <span className="font-semibold">{event.title}</span>
+            </div>
+        )
+    }
+
     if (event.type === 'appointment') {
         const app = event.original as Appointment;
         const categoryInfo = appointmentCategories[app.category];
@@ -273,6 +285,7 @@ function EventPill({ event, onEdit }: { event: CalendarEvent, onEdit: (app: Appo
             </DialogTrigger>
         )
     }
+
     const task = event.original as Task;
     return (
         <div className="w-full text-left p-1.5 rounded-md text-xs mb-1 truncate bg-purple-500/20 text-purple-700 dark:text-purple-300">
@@ -285,8 +298,13 @@ function EventPill({ event, onEdit }: { event: CalendarEvent, onEdit: (app: Appo
 function EventListItem({ event, onEdit, employeeMap }: { event: CalendarEvent, onEdit: (app: Appointment) => void; employeeMap: Map<string, Employee> }) {
   const assignedTo = event.assignedTo ? employeeMap.get(event.assignedTo) : null;
   const isAppointment = event.type === 'appointment';
-  const item = event.original as (Appointment | Task);
-  const categoryInfo = isAppointment ? appointmentCategories[(item as Appointment).category] : null;
+  const isHoliday = event.type === 'holiday';
+  const item = event.original as (Appointment | Task | Holiday);
+  
+  const categoryInfo = isAppointment 
+      ? appointmentCategories[(item as Appointment).category] 
+      : (isHoliday ? holidayCategory : null);
+
   const statusInfo = isAppointment ? appointmentStatuses[(item as Appointment).status] : null;
   const Icon = categoryInfo?.icon || Kanban;
   
@@ -298,19 +316,21 @@ function EventListItem({ event, onEdit, employeeMap }: { event: CalendarEvent, o
   return (
     <Card className={cn(
         "mb-3",
-        isAppointment && categoryInfo?.bgClass
+        isAppointment && categoryInfo?.bgClass,
+        isHoliday && holidayCategory.bgClass
     )}>
       <CardContent className="p-4">
         <div className="flex justify-between items-start">
             <div className="flex items-start gap-3">
-                <Icon className={cn("h-5 w-5 mt-0.5", categoryInfo ? categoryInfo.colorClass.replace('border-', 'text-') : 'text-purple-500')} />
+                <Icon className={cn("h-5 w-5 mt-0.5", categoryInfo ? categoryInfo.colorClass.replace('border-', 'text-') : 'text-purple-500', isHoliday && 'text-green-600')} />
                 <div>
                     <p className={cn("font-semibold", statusInfo?.label === 'Cancelled' && 'line-through')}>{event.title}</p>
                     <p className="text-sm text-muted-foreground">{formatDateRange(event.startDate, event.endDate)}</p>
                 </div>
             </div>
             {isAppointment && <Badge variant="outline" className={cn(statusInfo?.colorClass)}>{statusInfo?.label}</Badge>}
-            {!isAppointment && <Badge variant="secondary">Task</Badge>}
+            {isHoliday && <Badge variant="outline" className="text-green-600 border-green-600/50">Holiday</Badge>}
+            {!isAppointment && !isHoliday && <Badge variant="secondary">Task</Badge>}
         </div>
         <div className="mt-3 flex justify-between items-center">
             <div className="flex items-center gap-2">
@@ -341,8 +361,31 @@ export default function CalendarPage() {
   const [initialDateForForm, setInitialDateForForm] = useState<DateRange | undefined>(undefined);
   const [filters, setFilters] = useState({ category: 'all', status: 'all' });
   const [viewMode, setViewMode] = useState<'month' | 'quarter'>('month');
+  const [holidays, setHolidays] = useState<CalendarEvent[]>([]);
 
   const employeeMap = useMemo(() => new Map(employees.map(e => [e.id, e])), [employees]);
+
+  useEffect(() => {
+    const fetchHolidays = async () => {
+        const viewStart = viewMode === 'month' ? startOfMonth(currentMonth) : startOfQuarter(currentMonth);
+        const viewEnd = viewMode === 'month' ? endOfMonth(currentMonth) : endOfQuarter(currentMonth);
+
+        const holidayData = await getNationalHolidays(viewStart.toISOString(), viewEnd.toISOString());
+        
+        setHolidays(holidayData.map(h => ({
+            id: h.id,
+            startDate: h.startDate,
+            endDate: h.endDate,
+            title: h.title,
+            description: "National Holiday",
+            type: 'holiday',
+            original: h
+        })));
+    };
+
+    fetchHolidays();
+  }, [currentMonth, viewMode]);
+
 
   const allEvents: CalendarEvent[] = useMemo(() => {
     const fromAppointments: CalendarEvent[] = appointments.map(app => ({
@@ -369,8 +412,8 @@ export default function CalendarPage() {
         original: task,
       }));
 
-    return [...fromAppointments, ...fromTasks];
-  }, [appointments, tasks]);
+    return [...fromAppointments, ...fromTasks, ...holidays];
+  }, [appointments, tasks, holidays]);
   
   const filteredEvents = useMemo(() => {
     return allEvents.filter(event => {
@@ -380,7 +423,7 @@ export default function CalendarPage() {
             const statusMatch = filters.status === 'all' || app.status === filters.status;
             return categoryMatch && statusMatch;
         }
-        return true; // Tasks are always shown for now
+        return true; 
     })
   }, [allEvents, filters]);
 
