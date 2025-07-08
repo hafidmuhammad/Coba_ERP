@@ -55,7 +55,7 @@ export default function DashboardPage() {
     }).format(amount);
   };
 
-  // --- Data for Profit Chart ---
+  // --- Data for Charts ---
   const monthlyRevenue = revenue.reduce((acc, item) => {
     const month = format(item.date, "yyyy-MM");
     acc[month] = (acc[month] || 0) + item.amount;
@@ -95,6 +95,18 @@ export default function DashboardPage() {
     profit: {
       label: "Profit",
       color: "hsl(var(--chart-1))",
+    },
+  } satisfies ChartConfig;
+
+  const salesChartData = allMonths.map((monthStr) => ({
+    month: format(new Date(`${monthStr}-02`), 'MMM yy'),
+    sales: monthlyRevenue[monthStr] || 0,
+  }));
+
+  const salesChartConfig = {
+    sales: {
+      label: 'Sales',
+      color: 'hsl(var(--chart-3))',
     },
   } satisfies ChartConfig;
 
@@ -191,7 +203,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Profit Analysis</CardTitle>
             <CardDescription>Monthly revenue, expenses, and profit.</CardDescription>
@@ -292,6 +304,52 @@ export default function DashboardPage() {
                 <div className="flex h-[250px] items-center justify-center text-muted-foreground">
                     No employee data to display.
                 </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Sales Trend</CardTitle>
+            <CardDescription>Monthly sales performance.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {salesChartData.length > 1 ? (
+              <ChartContainer config={salesChartConfig} className="min-h-[250px] w-full">
+                <BarChart accessibilityLayer data={salesChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tickFormatter={(value) =>
+                      `$${Number(value) / 1000}k`
+                    }
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent
+                        formatter={(value) => formatCurrency(value as number)}
+                        hideLabel 
+                        indicator="dot"
+                    />}
+                  />
+                  <Bar
+                    dataKey="sales"
+                    fill="var(--color-sales)"
+                    radius={4}
+                  />
+                </BarChart>
+              </ChartContainer>
+            ) : (
+              <div className="flex h-[250px] items-center justify-center text-muted-foreground">
+                Not enough data to display chart.
+              </div>
             )}
           </CardContent>
         </Card>
