@@ -20,6 +20,7 @@ import {
   Calendar,
   Lightbulb,
   FileText,
+  Package,
 } from "lucide-react";
 import { Button } from "./ui/button";
 
@@ -27,6 +28,7 @@ const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/revenue", label: "Revenue", icon: DollarSign },
   { href: "/expenses", label: "Expenses", icon: CreditCard },
+  { href: "/products", label: "Products", icon: Package },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/insights", label: "Insights", icon: Lightbulb },
 ];

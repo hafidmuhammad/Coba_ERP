@@ -119,7 +119,8 @@ function AppointmentForm({
 export default function CalendarPage() {
   const { appointments, deleteAppointment } = useAppContext();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | undefined>(undefined);
   const { toast } = useToast();
 
   const dailyAppointments = useMemo(() => {
@@ -161,7 +162,7 @@ export default function CalendarPage() {
                 {dailyAppointments.length} appointment(s)
               </CardDescription>
             </div>
-            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <Dialog open={isAddFormOpen} onOpenChange={setIsAddFormOpen}>
                 <DialogTrigger asChild>
                     <Button size="icon" variant="outline"><PlusCircle className="h-4 w-4"/></Button>
                 </DialogTrigger>
@@ -169,7 +170,7 @@ export default function CalendarPage() {
                     <DialogHeader>
                         <DialogTitle>Add Appointment</DialogTitle>
                     </DialogHeader>
-                    <AppointmentForm selectedDate={selectedDate} onFinished={() => setIsFormOpen(false)} />
+                    <AppointmentForm selectedDate={selectedDate} onFinished={() => setIsAddFormOpen(false)} />
                 </DialogContent>
             </Dialog>
           </div>
@@ -187,18 +188,15 @@ export default function CalendarPage() {
                         {app.participants && <p className="text-xs text-muted-foreground mt-1">With: {app.participants}</p>}
                     </div>
                     <div className="flex gap-1">
-                      <Dialog>
+                      <Dialog open={editingAppointment?.id === app.id} onOpenChange={(isOpen) => !isOpen && setEditingAppointment(undefined)}>
                         <DialogTrigger asChild>
-                           <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
+                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingAppointment(app)}><Edit className="h-4 w-4" /></Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
                             <DialogTitle>Edit Appointment</DialogTitle>
                           </DialogHeader>
-                           <AppointmentForm appointment={app} selectedDate={selectedDate} onFinished={() => {
-                                const closeButton = document.querySelector('[data-radix-dialog-close]');
-                                if (closeButton instanceof HTMLElement) closeButton.click();
-                           }} />
+                           <AppointmentForm appointment={app} selectedDate={selectedDate} onFinished={() => setEditingAppointment(undefined)} />
                         </DialogContent>
                       </Dialog>
                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(app.id)}><Trash2 className="h-4 w-4" /></Button>
