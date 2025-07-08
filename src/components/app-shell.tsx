@@ -31,6 +31,7 @@ import {
   Package,
   Users,
   CircleUser,
+  Kanban,
 } from "lucide-react";
 import { Button } from "./ui/button";
 
@@ -42,6 +43,7 @@ const navItems = [
   { href: "/employees", label: "Employees", icon: Users },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/insights", label: "Insights", icon: Lightbulb },
+  { href: "/kanban", label: "Kanban", icon: Kanban },
 ];
 
 function AuthLayout({ children }: { children: React.ReactNode }) {

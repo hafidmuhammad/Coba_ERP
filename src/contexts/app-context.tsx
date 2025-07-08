@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
-import { Revenue, Expense, Appointment, Product, Employee } from "@/lib/types";
+import { Revenue, Expense, Appointment, Product, Employee, Task } from "@/lib/types";
 
 // Mock Data
 const initialRevenue: Revenue[] = [
@@ -32,12 +32,22 @@ const initialEmployees: Employee[] = [
   { id: "emp2", name: "Jane Smith", position: "Project Manager", email: "jane.smith@example.com", phone: "098-765-4321", salary: 95000 },
 ];
 
+const initialTasks: Task[] = [
+  { id: 'task1', columnId: 'todo', title: 'Draft Q3 promotional material', description: 'Focus on new port services.' },
+  { id: 'task2', columnId: 'todo', title: 'Schedule social media posts for next week' },
+  { id: 'task3', columnId: 'inprogress', title: 'Develop new CRM integration feature' },
+  { id: 'task4', columnId: 'inprogress', title: 'Onboard new logistics partner' },
+  { id: 'task5', columnId: 'inreview', title: 'Review Q2 financial report' },
+  { id: 'task6', columnId: 'done', title: 'Finalize employee handbook update' },
+];
+
 interface AppContextType {
   revenue: Revenue[];
   expenses: Expense[];
   appointments: Appointment[];
   products: Product[];
   employees: Employee[];
+  tasks: Task[];
   addRevenue: (item: Omit<Revenue, "id">) => void;
   addExpense: (item: Omit<Expense, "id">) => void;
   addAppointment: (item: Omit<Appointment, "id">) => void;
@@ -49,6 +59,8 @@ interface AppContextType {
   addEmployee: (item: Omit<Employee, "id">) => void;
   updateEmployee: (item: Employee) => void;
   deleteEmployee: (id: string) => void;
+  addTask: (item: Omit<Task, "id">) => void;
+  updateTask: (item: Task) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -59,6 +71,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
 
   const addRevenue = (item: Omit<Revenue, "id">) => {
     setRevenue((prev) => [...prev, { ...item, id: `rev${Date.now()}` }]);
@@ -104,6 +117,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setEmployees((prev) => prev.filter(item => item.id !== id));
   };
 
+  const addTask = (item: Omit<Task, "id">) => {
+    setTasks((prev) => [...prev, { ...item, id: `task${Date.now()}` }]);
+  };
+
+  const updateTask = (updatedItem: Task) => {
+    setTasks((prev) => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -112,6 +133,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         appointments,
         products,
         employees,
+        tasks,
         addRevenue,
         addExpense,
         addAppointment,
@@ -123,6 +145,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         addEmployee,
         updateEmployee,
         deleteEmployee,
+        addTask,
+        updateTask,
       }}
     >
       {children}

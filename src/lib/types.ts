@@ -39,3 +39,10 @@ export interface Employee {
   phone: string;
   salary: number;
 }
+
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  columnId: 'todo' | 'inprogress' | 'inreview' | 'done';
+}
