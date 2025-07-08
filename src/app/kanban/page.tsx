@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -8,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { PlusCircle, MoreHorizontal, Edit, Trash2, CalendarIcon, User, Flag, Search } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Edit, Trash2, CalendarIcon, User, Flag, Search, AreaChart } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +41,8 @@ import { cn } from "@/lib/utils";
 import { DndContext, DragEndEvent, DragStartEvent, PointerSensor, useSensor, useSensors, closestCorners, DragOverlay } from "@dnd-kit/core";
 import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { KanbanAnalytics } from './analytics';
 
 type KanbanColumnId = 'todo' | 'inprogress' | 'inreview' | 'done';
 
@@ -397,6 +400,21 @@ export default function KanbanPage() {
                 <DialogContent><DialogHeader><DialogTitle>Add New Task</DialogTitle></DialogHeader><TaskForm onFinished={() => setIsAddDialogOpen(false)} /></DialogContent>
             </Dialog>
         </div>
+
+        <Accordion type="single" collapsible className="mb-4">
+            <AccordionItem value="item-1">
+                <AccordionTrigger>
+                    <div className="flex items-center gap-2 text-primary hover:text-primary/90">
+                        <AreaChart className="h-5 w-5" />
+                        <h3 className="text-lg font-medium">Analytics & Progress</h3>
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4">
+                    <KanbanAnalytics tasks={tasks} employees={employees} />
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
+
 
         <Card className="mb-4 p-3 flex-shrink-0">
             <div className="flex flex-col md:flex-row gap-3">
