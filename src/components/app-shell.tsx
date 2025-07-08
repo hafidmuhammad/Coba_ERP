@@ -66,7 +66,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <Sidebar>
+      <Sidebar collapsible="icon">
         <SidebarContent>
           <SidebarHeader>
             <div className="flex items-center gap-2">
@@ -75,7 +75,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <FileText className="h-5 w-5" />
                 </Link>
                </Button>
-              <h1 className="text-xl font-semibold">BizSight</h1>
+              <h1 className="text-xl font-semibold group-[[data-state=collapsed]]:hidden">BizSight</h1>
             </div>
           </SidebarHeader>
           <SidebarMenu>
@@ -98,7 +98,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </Sidebar>
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 lg:h-[60px] lg:px-6">
-          <SidebarTrigger className="md:hidden" />
+          <SidebarTrigger />
           <div className="flex-1">
             {/* Can add page-specific header content here */}
           </div>
