@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useAppContext } from '@/contexts/app-context';
 import type { Task, Employee } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { PlusCircle, MoreHorizontal, Edit, Trash2, CalendarIcon, User, Flag, Filter, Search } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Edit, Trash2, CalendarIcon, User, Flag, Search } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +34,7 @@ import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { DndContext, DragEndEvent, DragStartEvent, PointerSensor, useSensor, useSensors, closestCorners, DragOverlay } from "@dnd-kit/core";
@@ -255,6 +256,11 @@ export default function KanbanPage() {
   const { toast } = useToast();
   
   const [filters, setFilters] = useState({ searchTerm: '', priority: '', assignedTo: '' });
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   
@@ -334,6 +340,47 @@ export default function KanbanPage() {
   };
   
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+  
+  if (!isMounted) {
+    return (
+      <div className="flex flex-col h-[calc(100vh-8rem)]">
+        <div className="flex justify-between items-center mb-4 flex-shrink-0">
+            <h1 className="text-2xl font-bold">Kanban Board</h1>
+            <Button disabled><PlusCircle className="mr-2 h-4 w-4" /> Add Task</Button>
+        </div>
+
+        <Card className="mb-4 p-3 flex-shrink-0">
+            <div className="flex flex-col md:flex-row gap-3">
+                <div className="relative flex-grow">
+                    <Skeleton className="h-10 w-full" />
+                </div>
+                <Skeleton className="h-10 w-full md:w-[180px]" />
+                <Skeleton className="h-10 w-full md:w-[180px]" />
+                <Skeleton className="h-10 w-[70px]" />
+            </div>
+        </Card>
+        
+        <div className="flex-1 min-h-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start h-full">
+            {columns.map((column) => (
+              <div key={column.id} className="bg-muted/50 rounded-lg flex flex-col max-h-full">
+                <div className="p-3 border-b border-border">
+                  <h2 className="font-semibold flex items-center justify-between">
+                    <span>{column.title}</span>
+                    <Skeleton className="h-5 w-5 rounded-full" />
+                  </h2>
+                </div>
+                <div className="p-2 pt-4 flex-1 overflow-y-auto space-y-4">
+                  <Skeleton className="h-24 w-full" />
+                  <Skeleton className="h-20 w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
 
   return (
