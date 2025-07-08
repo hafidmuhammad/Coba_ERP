@@ -14,6 +14,8 @@ import {
   TrendingUp,
   Package,
   Users,
+  LineChart as LineChartIcon,
+  BarChart as BarChartIcon,
 } from "lucide-react";
 import {
   Bar,
@@ -232,8 +234,11 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Profit Analysis</CardTitle>
-            <CardDescription>Monthly revenue, expenses, and profit.</CardDescription>
+            <div className="flex items-center gap-3">
+              <LineChartIcon className="h-6 w-6 text-primary" />
+              <CardTitle>Profit Analysis</CardTitle>
+            </div>
+            <CardDescription className="ml-9 pt-1">Monthly revenue, expenses, and profit.</CardDescription>
           </CardHeader>
           <CardContent>
             {profitChartData.length > 1 ? (
@@ -297,8 +302,11 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Employee Distribution</CardTitle>
-            <CardDescription>Number of employees by position.</CardDescription>
+            <div className="flex items-center gap-3">
+                <BarChartIcon className="h-6 w-6 text-primary" />
+                <CardTitle>Employee Distribution</CardTitle>
+            </div>
+            <CardDescription className="ml-9 pt-1">Number of employees by position.</CardDescription>
           </CardHeader>
           <CardContent>
             {employeeChartData.length > 0 ? (
@@ -337,8 +345,11 @@ export default function DashboardPage() {
         
         <Card>
           <CardHeader>
-            <CardTitle>Sales Trend</CardTitle>
-            <CardDescription>Monthly sales performance.</CardDescription>
+            <div className="flex items-center gap-3">
+                <BarChartIcon className="h-6 w-6 text-primary" />
+                <CardTitle>Sales Trend</CardTitle>
+            </div>
+            <CardDescription className="ml-9 pt-1">Monthly sales performance.</CardDescription>
           </CardHeader>
           <CardContent>
             {salesChartData.length > 1 ? (
@@ -385,8 +396,11 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Top Selling Products</CardTitle>
-            <CardDescription>
+            <div className="flex items-center gap-3">
+                <Package className="h-6 w-6 text-primary" />
+                <CardTitle>Top Selling Products</CardTitle>
+            </div>
+            <CardDescription className="ml-9 pt-1">
               Your best-performing products by revenue.
             </CardDescription>
           </CardHeader>
