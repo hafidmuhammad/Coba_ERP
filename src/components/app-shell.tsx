@@ -14,6 +14,14 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   LayoutDashboard,
   DollarSign,
   CreditCard,
@@ -22,6 +30,7 @@ import {
   FileText,
   Package,
   Users,
+  CircleUser,
 } from "lucide-react";
 import { Button } from "./ui/button";
 
@@ -35,8 +44,21 @@ const navItems = [
   { href: "/insights", label: "Insights", icon: Lightbulb },
 ];
 
+function AuthLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-svh w-full items-center justify-center bg-background p-4">
+      {children}
+    </div>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const isAuthPage = pathname === "/login" || pathname === "/register";
+
+  if (isAuthPage) {
+    return <AuthLayout>{children}</AuthLayout>;
+  }
 
   return (
     <SidebarProvider>
@@ -76,6 +98,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex-1">
             {/* Can add page-specific header content here */}
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" size="icon" className="rounded-full">
+                <CircleUser className="h-5 w-5" />
+                <span className="sr-only">Toggle user menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem>Support</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/login">Logout</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </header>
         <main className="flex-1 p-4 sm:px-6 sm:py-0 md:p-6">{children}</main>
       </SidebarInset>
