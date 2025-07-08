@@ -33,12 +33,12 @@ const initialEmployees: Employee[] = [
 ];
 
 const initialTasks: Task[] = [
-  { id: 'task1', columnId: 'todo', title: 'Draft Q3 promotional material', description: 'Focus on new port services.', assignedDate: new Date() },
-  { id: 'task2', columnId: 'todo', title: 'Schedule social media posts for next week' },
-  { id: 'task3', columnId: 'inprogress', title: 'Develop new CRM integration feature', assignedDate: new Date() },
-  { id: 'task4', columnId: 'inprogress', title: 'Onboard new logistics partner' },
-  { id: 'task5', columnId: 'inreview', title: 'Review Q2 financial report' },
-  { id: 'task6', columnId: 'done', title: 'Finalize employee handbook update', assignedDate: new Date() },
+    { id: 'task1', columnId: 'todo', title: 'Draft Q3 promotional material', description: 'Focus on new port services.', dueDate: new Date(new Date().setDate(new Date().getDate() + 3)), priority: 'high', assignedTo: 'emp2' },
+    { id: 'task2', columnId: 'todo', title: 'Schedule social media posts for next week', priority: 'medium' },
+    { id: 'task3', columnId: 'inprogress', title: 'Develop new CRM integration feature', dueDate: new Date(new Date().setDate(new Date().getDate() + 10)), priority: 'urgent', assignedTo: 'emp1' },
+    { id: 'task4', columnId: 'inprogress', title: 'Onboard new logistics partner', priority: 'high' },
+    { id: 'task5', columnId: 'inreview', title: 'Review Q2 financial report', priority: 'medium', assignedTo: 'emp2'},
+    { id: 'task6', columnId: 'done', title: 'Finalize employee handbook update', dueDate: new Date(new Date().setDate(new Date().getDate() - 5)), priority: 'low' },
 ];
 
 interface AppContextType {
