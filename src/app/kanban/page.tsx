@@ -91,16 +91,21 @@ function TaskForm({ task, onFinished }: { task?: Task, onFinished: () => void })
       description: task?.description || "",
       dueDate: task?.dueDate ? new Date(task.dueDate) : undefined,
       priority: task?.priority || 'medium',
-      assignedTo: task?.assignedTo || "",
+      assignedTo: task?.assignedTo || "unassigned",
     },
   });
 
   const onSubmit = (values: z.infer<typeof taskSchema>) => {
+    const finalValues = {
+      ...values,
+      assignedTo: values.assignedTo === 'unassigned' ? undefined : values.assignedTo
+    };
+
     if (task) {
-      updateTask({ ...task, ...values });
+      updateTask({ ...task, ...finalValues });
       toast({ title: "Success", description: "Task updated." });
     } else {
-      addTask({ ...values, columnId: 'todo' });
+      addTask({ ...finalValues, columnId: 'todo' });
       toast({ title: "Success", description: "Task added." });
     }
     onFinished();
@@ -140,10 +145,10 @@ function TaskForm({ task, onFinished }: { task?: Task, onFinished: () => void })
         </div>
         <FormField control={form.control} name="assignedTo" render={({ field }) => (
             <FormItem><FormLabel>Assigned To</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select a team member" /></SelectTrigger></FormControl>
                     <SelectContent>
-                        <SelectItem value="">Unassigned</SelectItem>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
                         {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
                     </SelectContent>
                 </Select>
@@ -399,17 +404,27 @@ export default function KanbanPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Search tasks..." className="pl-9" value={filters.searchTerm} onChange={e => handleFilterChange('searchTerm', e.target.value)} />
                 </div>
-                <Select value={filters.priority} onValueChange={value => handleFilterChange('priority', value)}>
-                    <SelectTrigger className="w-full md:w-[180px]"><div className="flex items-center gap-2"><Flag className="h-4 w-4" /><span>Priority</span></div></SelectTrigger>
+                <Select value={filters.priority} onValueChange={value => handleFilterChange('priority', value === 'all' ? '' : value)}>
+                    <SelectTrigger className="w-full md:w-[180px]">
+                        <span className="flex items-center gap-2">
+                           <Flag className="h-4 w-4 text-muted-foreground" />
+                           <SelectValue placeholder="Priority" />
+                        </span>
+                    </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="">All Priorities</SelectItem>
+                        <SelectItem value="all">All Priorities</SelectItem>
                         {priorities.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
                     </SelectContent>
                 </Select>
-                <Select value={filters.assignedTo} onValueChange={value => handleFilterChange('assignedTo', value)}>
-                    <SelectTrigger className="w-full md:w-[180px]"><div className="flex items-center gap-2"><User className="h-4 w-4" /><span>Assignee</span></div></SelectTrigger>
+                <Select value={filters.assignedTo} onValueChange={value => handleFilterChange('assignedTo', value === 'all' ? '' : value)}>
+                    <SelectTrigger className="w-full md:w-[180px]">
+                        <span className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <SelectValue placeholder="Assignee" />
+                        </span>
+                    </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="">All Assignees</SelectItem>
+                        <SelectItem value="all">All Assignees</SelectItem>
                         {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
                     </SelectContent>
                 </Select>
