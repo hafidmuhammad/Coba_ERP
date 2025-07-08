@@ -62,6 +62,7 @@ interface AppContextType {
   addTask: (item: Omit<Task, "id">) => void;
   updateTask: (item: Task) => void;
   deleteTask: (id: string) => void;
+  setAllTasks: (tasks: Task[] | ((tasks: Task[]) => Task[])) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -129,6 +130,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const deleteTask = (id: string) => {
     setTasks((prev) => prev.filter(item => item.id !== id));
   };
+  
+  const setAllTasks = (newTasks: Task[] | ((tasks: Task[]) => Task[])) => {
+    setTasks(newTasks);
+  };
 
   return (
     <AppContext.Provider
@@ -153,6 +158,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         addTask,
         updateTask,
         deleteTask,
+        setAllTasks,
       }}
     >
       {children}
